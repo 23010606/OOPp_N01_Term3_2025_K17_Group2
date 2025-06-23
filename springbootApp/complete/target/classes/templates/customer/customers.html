@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Danh sách khách hàng</title>
+</head>
+<body>
+    <h1>Danh sách khách hàng</h1>
+    <a href="/customers/add">Thêm khách hàng</a>
+    <ul>
+        <li th:each="c : ${customers}">
+            <span th:text="${c.id}"></span> - 
+            <span th:text="${c.name}"></span> - 
+            <span th:text="${c.email}"></span> - 
+            <span th:text="${c.phoneNumber}"></span>
+            <a th:href="@{'/customers/delete/' + ${c.id}}">Xóa</a>
+        </li>
+    </ul>
+</body>
+</html>

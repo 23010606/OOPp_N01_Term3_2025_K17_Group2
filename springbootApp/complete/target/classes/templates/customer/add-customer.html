@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Thêm khách hàng</title>
+</head>
+<body>
+    <h1>Thêm khách hàng</h1>
+    <form th:action="@{/customers/add}" th:object="${customer}" method="post">
+        ID: <input type="text" th:field="*{id}" /><br/>
+        Tên: <input type="text" th:field="*{name}" /><br/>
+        Email: <input type="text" th:field="*{email}" /><br/>
+        Số điện thoại: <input type="text" th:field="*{phoneNumber}" /><br/>
+        <button type="submit">Thêm</button>
+    </form>
+    <a href="/customers">Quay lại danh sách</a>
+</body>
+</html>
