@@ -6,42 +6,82 @@
         body { font-family: Arial, sans-serif; margin: 40px; }
         .error { color: red; }
         .success { color: green; }
-        table { border-collapse: collapse; width: 100%; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
+        .filter-form { margin-bottom: 20px; }
+        .filter-form label { margin-right: 10px; }
+        .filter-form input, .filter-form select { padding: 5px; }
+        .filter-form button { padding: 5px 10px; background-color: #4CAF50; color: white; border: none; }
+        .actions a { margin-right: 10px; text-decoration: none; color: #007BFF; }
     </style>
 </head>
 <body>
     <h1>Car List</h1>
     <div th:if="${error}" class="error" th:text="${error}"></div>
     <div th:if="${message}" class="success" th:text="${message}"></div>
-    <form th:action="@{/cars/add}" method="post">
-        <label>Car ID: <input type="text" name="carId" required></label>
-        <label>Brand: <input type="text" name="brand" required></label>
-        <label>Model: <input type="text" name="carModel" required></label>
-        <label>Price: <input type="number" name="price" step="0.01" required></label>
-        <label>Status: <input type="text" name="status" value="Available" required></label>
-        <label>Import Date (dd/MM/yyyy): <input type="text" name="importDateStr" required></label>
-        <button type="submit">Add Car</button>
-    </form>
+
+    <!-- Nút thêm xe mới -->
+    <a href="/cars/add">Add New Car</a>
+
+    <!-- Form lọc theo năm -->
+    <div class="filter-form">
+        <form th:action="@{/cars/year/{year}(year=${year})}" method="get">
+            <label>Year:</label>
+            <input type="number" name="year" min="1900" required>
+            <button type="submit">Filter by Year</button>
+        </form>
+    </div>
+
+    <!-- Form lọc theo giá -->
+    <div class="filter-form">
+        <form th:action="@{/cars/price}" method="get">
+            <label>Min Price:</label>
+            <input type="number" name="minPrice" min="0" step="0.01" required>
+            <label>Max Price:</label>
+            <input type="number" name="maxPrice" min="0" step="0.01" required>
+            <button type="submit">Filter by Price</button>
+        </form>
+    </div>
+
+    <!-- Form lọc theo trạng thái -->
+    <div class="filter-form">
+        <form th:action="@{/cars/status}" method="get">
+            <label>Status:</label>
+            <select name="status" required>
+                <option value="Available">Available</option>
+                <option value="Sold">Sold</option>
+                <option value="Reserved">Reserved</option>
+            </select>
+            <button type="submit">Filter by Status</button>
+        </form>
+    </div>
+
+    <!-- Bảng danh sách xe -->
     <table>
         <tr>
             <th>ID</th>
             <th>Brand</th>
             <th>Model</th>
+            <th>Year</th>
             <th>Price</th>
             <th>Status</th>
             <th>Import Date</th>
+            <th>Actions</th>
         </tr>
         <tr th:each="car : ${cars}">
             <td th:text="${car.carId}"></td>
             <td th:text="${car.brand}"></td>
             <td th:text="${car.model}"></td>
-            <td th:text="${car.price}"></td>
+            <td th:text="${car.year}"></td>
+            <td th:text="${#numbers.formatDecimal(car.price, 0, 'COMMA', 2, 'POINT')} + ' VND'"></td>
             <td th:text="${car.status}"></td>
             <td th:text="${#dates.format(car.importDate, 'dd/MM/yyyy')}"></td>
+            <td class="actions">
+                <a th:href="@{/cars/edit/{carId}(carId=${car.carId})}">Edit</a> |
+                <a th:href="@{/cars/delete/{carId}(carId=${car.carId})}" onclick="return confirm('Are you sure?')">Delete</a>
+            </td>
         </tr>
     </table>
-    <a href="/">Back to Home</a>
 </body>
 </html>

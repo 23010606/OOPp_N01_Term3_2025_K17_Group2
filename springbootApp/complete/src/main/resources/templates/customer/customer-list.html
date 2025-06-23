@@ -15,25 +15,32 @@
     <h1>Customer List</h1>
     <div th:if="${error}" class="error" th:text="${error}"></div>
     <div th:if="${message}" class="success" th:text="${message}"></div>
-    <form th:action="@{/customers/add}" method="post">
-        <label>Customer ID: <input type="text" name="customerId" required></label>
-        <label>Name: <input type="text" name="name" required></label>
-        <label>Phone: <input type="text" name="phone" required></label>
-        <label>Address: <input type="text" name="address" required></label>
-        <button type="submit">Add Customer</button>
+    <form th:action="@{/customers/search}" method="get">
+        <input type="text" name="keyword" placeholder="Enter name, email, or phone" required>
+        <button type="submit">Search</button>
     </form>
+    <a href="/customers/add">Add New Customer</a>
     <table>
         <tr>
             <th>ID</th>
             <th>Name</th>
+            <th>Email</th>
             <th>Phone</th>
             <th>Address</th>
+            <th>Actions</th>
         </tr>
         <tr th:each="customer : ${customers}">
-            <td th:text="${customer.customerId}"></td>
+            <td th:text="${customer.id}"></td>
             <td th:text="${customer.name}"></td>
-            <td th:text="${customer.phone}"></td>
+            <td th:text="${customer.email}"></td>
+            <td th:text="${customer.phoneNumber}"></td>
             <td th:text="${customer.address}"></td>
+            <td>
+                <a th:href="@{/customers/edit/{id}(id=${customer.id})}">Edit</a> |
+                <a th:href="@{/customers/delete/{id}(id=${customer.id})}" onclick="return confirm('Are you sure?')">Delete</a> |
+                <a th:href="@{/customers/history/{id}(id=${customer.id})}">History</a> |
+                <a th:href="@{/customers/total/{id}(id=${customer.id})}">Total</a>
+            </td>
         </tr>
     </table>
     <a href="/">Back to Home</a>

@@ -1,17 +1,41 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Sửa khách hàng</title>
+    <title>Edit Customer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .error { color: red; }
+        .form-group { margin-bottom: 15px; }
+        label { display: inline-block; width: 100px; }
+        input { padding: 5px; }
+        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; }
+    </style>
 </head>
 <body>
-    <h1>Sửa khách hàng</h1>
-    <form th:action="@{/customers/edit}" th:object="${customer}" method="post">
-        ID: <input type="text" th:field="*{id}" readonly/><br/>
-        Tên: <input type="text" th:field="*{name}" /><br/>
-        Email: <input type="text" th:field="*{email}" /><br/>
-        Số điện thoại: <input type="text" th:field="*{phoneNumber}" /><br/>
-        <button type="submit">Cập nhật</button>
+    <h1>Edit Customer</h1>
+    <form th:action="@{/customers/edit}" method="post">
+        <div class="form-group">
+            <label for="id">ID:</label>
+            <input type="text" id="id" name="id" th:value="${customer.id}" readonly>
+        </div>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" th:value="${customer.name}" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" th:value="${customer.email}" required>
+        </div>
+        <div class="form-group">
+            <label for="phoneNumber">Phone:</label>
+            <input type="text" id="phoneNumber" name="phoneNumber" th:value="${customer.phoneNumber}" required>
+        </div>
+        <div class="form-group">
+            <label for="address">Address:</label>
+            <input type="text" id="address" name="address" th:value="${customer.address}" required>
+        </div>
+        <button type="submit">Update Customer</button>
     </form>
-    <a href="/customers">Quay lại danh sách</a>
+    <a href="/customers">Back to List</a>
 </body>
 </html>

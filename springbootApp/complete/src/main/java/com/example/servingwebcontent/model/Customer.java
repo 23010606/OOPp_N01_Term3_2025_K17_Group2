@@ -20,22 +20,16 @@ public class Customer {
     @Transient
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     private List<Invoice> purchaseHistory;
-
-    public Customer() {
-        this.id = "";
-        this.name = "";
-        this.email = "";
-        this.phoneNumber = "";
-        this.address = "";
-        this.purchaseHistory = new ArrayList<>();
-    }
+    
+    public Customer() {}
+    
 
     // Constructor đầy đủ
-    public Customer(String id, String name, String phoneNumber, String address) {
+    public Customer(String id, String name, String email, String phone, String address) {
         this.id = id;
         this.name = name;
-        this.email = "";
-        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.phoneNumber = phone; // Sửa lại dòng này
         this.address = address;
         this.purchaseHistory = new ArrayList<>();
     }
@@ -82,8 +76,17 @@ public class Customer {
     public void deletePurchase(String invoiceId){ 
         purchaseHistory.removeIf(invoice -> invoice.getInvoiceId().equals(invoiceId));
     }
-    public String getCustomerInfo(){ 
-        return "ID: " + id + ", Name: " + name + ", Email: " + email + ", Phone: " + phoneNumber;
+    public String getCustomerInfo() {
+        return "ID: " + id +
+               ", Name: " + name +
+               ", Email: " + email +
+               ", Phone: " + phoneNumber +
+               ", Address: " + address;
+    }
+      public double getTotalPurchaseAmount() {
+        return purchaseHistory.stream()
+                .mapToDouble(Invoice::getTotalAmount)
+                .sum();
     }
     public String getCustomerId(){ 
         return id; 

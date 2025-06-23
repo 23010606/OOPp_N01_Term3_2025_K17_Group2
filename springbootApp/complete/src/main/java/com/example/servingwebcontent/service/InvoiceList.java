@@ -38,7 +38,14 @@ public class InvoiceList {
         invoiceRepository.save(invoice);
         customer.addPurchase(invoice);
         car.sellCar();
-        customerList.updateCustomer(customerId, customer.getName(), customer.getPhone(), customer.getAddress());
+        // Đảm bảo truyền đủ 5 tham số: id, name, email, phone, address
+        customerList.updateCustomer(
+            customer.getId(),
+            customer.getName(),
+            customer.getEmail(),
+            customer.getPhoneNumber(),
+            customer.getAddress()
+        );
     }
 
     public List<Invoice> getAllInvoices() {
@@ -54,12 +61,20 @@ public class InvoiceList {
         Customer customer = customerList.findCustomer(invoice.getCustomerId());
         if (customer != null) {
             customer.deletePurchase(invoiceId);
-            customerList.updateCustomer(customer.getCustomerId(), customer.getName(), customer.getPhone(), customer.getAddress());
+            customerList.updateCustomer(customer.getCustomerId(), customer.getName(), customer.getEmail(), customer.getPhone(), customer.getAddress());
         }
         Car car = carList.findCar(invoice.getCarId());
         if (car != null) {
             car.setStatus("Available");
-            carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getPrice());
+            carList.updateCar(
+                car.getCarId(),
+                car.getBrand(),
+                car.getModel(),
+                car.getYear(),
+                car.getPrice(),
+                car.getStatus(),
+                car.getImportDate()
+            );
         }
         invoiceRepository.deleteById(invoiceId);
     }

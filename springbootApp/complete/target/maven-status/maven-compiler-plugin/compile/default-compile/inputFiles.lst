@@ -11,6 +11,5 @@
 /workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/model/Invoice.java
 /workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/service/CustomerList.java
 /workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/model/Car.java
-/workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/MainMenu.java
 /workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/repository/InvoiceRepository.java
 /workspaces/test_oop/springbootApp/complete/src/main/java/com/example/servingwebcontent/controller/CustomerController.java
