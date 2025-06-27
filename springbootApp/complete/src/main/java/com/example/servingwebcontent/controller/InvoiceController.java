@@ -13,6 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Date;
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/invoices")
 public class InvoiceController {
@@ -30,23 +33,29 @@ public class InvoiceController {
     @GetMapping("/create")
     public String showCreateInvoiceForm(Model model, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         model.addAttribute("customers", customerList.getAllCustomers(PageRequest.of(page, size)).getContent());
-        model.addAttribute("cars", carList.getAvailableCars().stream().limit(size).toList()); // Lấy một số lượng giới hạn
+        model.addAttribute("cars", carList.getAvailableCars().stream().filter(c -> "Available".equals(c.getStatus())).limit(size).toList());
         return "invoice/create-invoice";
     }
 
     @PostMapping("/create")
-    public String createInvoice(@RequestParam String invoiceId,
+    public String createInvoice(@RequestParam(required = false) String invoiceId,
                                @RequestParam String customerId,
                                @RequestParam String carId,
                                @RequestParam double totalAmount,
                                RedirectAttributes redirectAttributes) {
-        if (invoiceId == null || invoiceId.trim().isEmpty() ||
-            customerId == null || customerId.trim().isEmpty() ||
+        if (customerId == null || customerId.trim().isEmpty() ||
             carId == null || carId.trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "All fields are required!");
+            redirectAttributes.addFlashAttribute("error", "Customer ID and Car ID are required!");
             return "redirect:/invoices/create";
         }
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            invoiceId = "INV-" + new Date().getTime() + "-" + UUID.randomUUID().toString().substring(0, 4);
+        }
         try {
+            Car car = carList.findCar(carId);
+            if (car == null || !"Available".equals(car.getStatus())) {
+                throw new IllegalStateException("Car is not available!");
+            }
             invoiceList.createInvoice(invoiceId, customerId, carId, totalAmount);
             redirectAttributes.addFlashAttribute("message", "Invoice created successfully!");
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -63,6 +72,16 @@ public class InvoiceController {
         return "invoice/invoice-list";
     }
 
+    @GetMapping("/detail/{invoiceId}")
+    public String showInvoiceDetail(@PathVariable String invoiceId, Model model) {
+        Invoice invoice = invoiceList.findInvoice(invoiceId);
+        if (invoice == null) {
+            return "redirect:/invoices";
+        }
+        model.addAttribute("invoice", invoice);
+        return "invoice/invoice-detail";
+    }
+
     @GetMapping("/delete/{invoiceId}")
     public String deleteInvoice(@PathVariable String invoiceId, RedirectAttributes redirectAttributes) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
@@ -70,6 +89,13 @@ public class InvoiceController {
             return "redirect:/invoices";
         }
         try {
+            Invoice invoice = invoiceList.findInvoice(invoiceId);
+            if (invoice == null) {
+                throw new IllegalArgumentException("Invoice not found!");
+            }
+            if (!"DRAFT".equals(invoice.getPaymentStatus()) && !"PENDING".equals(invoice.getPaymentStatus())) {
+                throw new IllegalStateException("Cannot delete paid or installment invoice!");
+            }
             invoiceList.deleteInvoice(invoiceId);
             redirectAttributes.addFlashAttribute("message", "Invoice deleted successfully!");
         } catch (Exception e) {
@@ -104,7 +130,7 @@ public class InvoiceController {
         Car car = carList.findCar(carId);
         if (customer == null || car == null) {
             redirectAttributes.addFlashAttribute("error", "Invalid customer or car!");
-            return "redirect:/invoices";
+            return "redirect:/invoices/edit/" + invoiceId;
         }
         if (totalAmount <= 0) {
             redirectAttributes.addFlashAttribute("error", "Total amount must be positive!");
@@ -117,5 +143,49 @@ public class InvoiceController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/invoices";
+    }
+
+    @PostMapping("/updatePayment")
+    public String updatePayment(@RequestParam String invoiceId,
+                               @RequestParam double amount,
+                               @RequestParam Date paymentDate,
+                               RedirectAttributes redirectAttributes) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Invoice ID cannot be null or empty!");
+            return "redirect:/invoices";
+        }
+        try {
+            Invoice invoice = invoiceList.findInvoice(invoiceId);
+            if (invoice == null) {
+                throw new IllegalArgumentException("Invoice not found!");
+            }
+            invoice.addPayment(amount, paymentDate);
+            invoiceList.updateInvoice(invoiceId, invoice.getCustomer(), invoice.getCar(), invoice.getTotalAmount());
+            redirectAttributes.addFlashAttribute("message", "Payment updated successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/invoices/detail/" + invoiceId;
+    }
+
+    @GetMapping("/search")
+    public String searchInvoices(@RequestParam(required = false) String invoiceId,
+                            @RequestParam(required = false) String customerName,
+                            @RequestParam(required = false) Date startDate,
+                            @RequestParam(required = false) Date endDate,
+                            @RequestParam(required = false) PaymentStatus paymentStatus,
+                            @RequestParam(defaultValue = "0") int page,
+                            @RequestParam(defaultValue = "10") int size,
+                            Model model) {
+        Page<Invoice> invoicePage = invoiceList.searchInvoices(invoiceId, customerName, startDate, endDate, paymentStatus, PageRequest.of(page, size));
+        model.addAttribute("invoices", invoicePage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", invoicePage.getTotalPages());
+        model.addAttribute("invoiceId", invoiceId);
+        model.addAttribute("customerName", customerName);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("paymentStatus", paymentStatus);
+        return "invoice/invoice-list";
     }
 }

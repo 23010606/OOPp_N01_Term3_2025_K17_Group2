@@ -1,7 +1,9 @@
 package com.example.servingwebcontent.model;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "invoices")
@@ -20,6 +22,13 @@ public class Invoice {
     private Date date;
     private double totalAmount;
 
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus; // Sử dụng enum riêng
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "invoice_id")
+    private List<Payment> paymentHistory = new ArrayList<>();
+
     public Invoice() {}
 
     public Invoice(String invoiceId, Customer customer, Car car, double totalAmount) {
@@ -31,6 +40,7 @@ public class Invoice {
         this.car = car;
         this.date = new Date();
         this.totalAmount = totalAmount;
+        this.paymentStatus = PaymentStatus.PENDING;
     }
 
     // Getters and Setters
@@ -54,14 +64,12 @@ public class Invoice {
         }
         this.totalAmount = totalAmount;
     }
-
-    public String getCustomerId() {
-        return customer != null ? customer.getId() : null;
-    }
-
-    public String getCarId() {
-        return car != null ? car.getCarId() : null;
-    }
+    public String getCustomerId() { return customer != null ? customer.getId() : null; }
+    public String getCarId() { return car != null ? car.getCarId() : null; }
+    public PaymentStatus getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
+    public List<Payment> getPaymentHistory() { return paymentHistory; }
+    public void setPaymentHistory(List<Payment> paymentHistory) { this.paymentHistory = paymentHistory; }
 
     // Phương thức nghiệp vụ
     public boolean isValid() {
@@ -74,8 +82,23 @@ public class Invoice {
         }
         this.totalAmount = newAmount;
         if (car != null) {
-            car.setStatus("Sold"); // Cập nhật trạng thái xe
+            car.setStatus("Sold");
         }
+    }
+
+    public void addPayment(double amount, Date paymentDate) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Payment amount must be positive!");
+        }
+        Payment payment = new Payment(paymentDate, amount);
+        paymentHistory.add(payment);
+        if (totalAmount <= calculateTotalPaid()) {
+            this.paymentStatus = PaymentStatus.PAID;
+        }
+    }
+
+    public double calculateTotalPaid() {
+        return paymentHistory.stream().mapToDouble(Payment::getAmount).sum();
     }
 
     public String getInvoiceDetails() {
@@ -83,6 +106,27 @@ public class Invoice {
                ", Customer ID: " + (customer != null ? customer.getId() : "N/A") +
                ", Car ID: " + (car != null ? car.getCarId() : "N/A") +
                ", Date: " + (date != null ? date : "N/A") +
-               ", Total: " + totalAmount + " VND";
+               ", Total: " + totalAmount + " VND" +
+               ", Status: " + paymentStatus +
+               ", Paid: " + calculateTotalPaid() + " VND";
     }
+}
+
+// Enum cho trạng thái thanh toán
+enum PaymentStatus {
+    DRAFT, PENDING, PAID, INSTALLMENT
+}
+
+// Class Payment (nội bộ hoặc tách riêng)
+class Payment {
+    private Date date;
+    private double amount;
+
+    public Payment(Date date, double amount) {
+        this.date = date;
+        this.amount = amount;
+    }
+
+    public Date getDate() { return date; }
+    public double getAmount() { return amount; }
 }

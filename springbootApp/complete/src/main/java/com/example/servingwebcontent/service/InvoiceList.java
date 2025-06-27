@@ -3,6 +3,7 @@ package com.example.servingwebcontent.service;
 import com.example.servingwebcontent.model.Car;
 import com.example.servingwebcontent.model.Customer;
 import com.example.servingwebcontent.model.Invoice;
+import com.example.servingwebcontent.model.PaymentStatus;
 import com.example.servingwebcontent.repository.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class InvoiceList {
@@ -23,7 +25,7 @@ public class InvoiceList {
 
     public void createInvoice(String invoiceId, String customerId, String carId, double totalAmount) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+            invoiceId = "INV-" + new Date().getTime() + "-" + UUID.randomUUID().toString().substring(0, 4);
         }
         if (invoiceRepository.existsById(invoiceId)) {
             throw new IllegalArgumentException("Invoice ID " + invoiceId + " already exists!");
@@ -49,7 +51,7 @@ public class InvoiceList {
         customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
                 customer.getAddress(), customer.getRegistrationDate());
         carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
-                car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
+                car.getStatus(), car.getImportDate(), car.getQuantity());
     }
 
     public Page<Invoice> getAllInvoices(PageRequest pageRequest) {
@@ -65,6 +67,9 @@ public class InvoiceList {
             throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
         }
         Invoice invoice = invoiceOpt.get();
+        if (!"DRAFT".equals(invoice.getPaymentStatus()) && !"PENDING".equals(invoice.getPaymentStatus())) {
+            throw new IllegalStateException("Cannot delete paid or installment invoice!");
+        }
         Customer customer = invoice.getCustomer();
         if (customer != null) {
             customer.deletePurchase(invoiceId);
@@ -75,7 +80,7 @@ public class InvoiceList {
         if (car != null) {
             car.setStatus("Available");
             carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
-                    car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
+                    car.getStatus(), car.getImportDate(), car.getQuantity());
         }
         invoiceRepository.deleteById(invoiceId);
     }
@@ -111,8 +116,21 @@ public class InvoiceList {
         if (car != null && !"Sold".equals(car.getStatus())) {
             car.setStatus("Sold");
             carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
-                    car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
+                    car.getStatus(), car.getImportDate(), car.getQuantity());
         }
+    }
+
+    public void addPayment(String invoiceId, double amount, Date paymentDate) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+        }
+        Optional<Invoice> invoiceOpt = invoiceRepository.findById(invoiceId);
+        if (invoiceOpt.isEmpty()) {
+            throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
+        }
+        Invoice invoice = invoiceOpt.get();
+        invoice.addPayment(amount, paymentDate);
+        invoiceRepository.save(invoice);
     }
 
     public Page<Invoice> getInvoicesByDateRange(Date startDate, Date endDate, PageRequest pageRequest) {
@@ -123,5 +141,10 @@ public class InvoiceList {
             throw new IllegalArgumentException("Start date cannot be after end date!");
         }
         return invoiceRepository.findByDateBetween(startDate, endDate, pageRequest);
+    }
+
+    public Page<Invoice> searchInvoices(String invoiceId, String customerName, Date startDate, Date endDate, PaymentStatus paymentStatus, PageRequest pageRequest) {
+        // Giả định InvoiceRepository có phương thức tùy chỉnh
+        return invoiceRepository.findByCriteria(invoiceId, customerName, startDate, endDate, paymentStatus, pageRequest);
     }
 }

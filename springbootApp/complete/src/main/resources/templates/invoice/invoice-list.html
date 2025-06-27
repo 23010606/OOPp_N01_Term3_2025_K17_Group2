@@ -1,41 +1,57 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Invoice List</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .error { color: red; }
-        .success { color: green; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .actions a { margin-right: 10px; text-decoration: none; color: #007BFF; }
-    </style>
+<head><title>Invoice List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Invoice List</h1>
-    <div th:if="${error}" class="error" th:text="${error}"></div>
-    <div th:if="${message}" class="success" th:text="${message}"></div>
-    <a href="/create-invoice">Create New Invoice</a>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Customer ID</th>
-            <th>Car ID</th>
-            <th>Date</th>
-            <th>Total Amount</th>
-            <th>Actions</th>
-        </tr>
-        <tr th:each="invoice : ${invoices}">
-            <td th:text="${invoice.invoiceId}"></td>
-            <td th:text="${invoice.customerId}"></td>
-            <td th:text="${invoice.carId}"></td>
-            <td th:text="${#dates.format(invoice.date, 'dd/MM/yyyy')}"></td>
-            <td th:text="${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT')} + ' VND'"></td>
-            <td class="actions">
-                <a th:href="@{/invoices/delete/{invoiceId}(invoiceId=${invoice.invoiceId})}" onclick="return confirm('Are you sure?')">Delete</a>
-            </td>
-        </tr>
-    </table>
-</body>
+    <div class="container">
+        <h1>Invoice List</h1>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <a th:href="@{/invoices/create}" class="btn btn-primary mb-3">Create Invoice</a>
+        <form th:action="@{/invoices/search}" method="get" class="mb-3">
+            <div class="row">
+                <div class="col"><input type="text" name="invoiceId" class="form-control" placeholder="Invoice ID" th:value="${invoiceId}"></div>
+                <div class="col"><input type="text" name="customerName" class="form-control" placeholder="Customer Name" th:value="${customerName}"></div>
+                <div class="col"><input type="date" name="startDate" class="form-control" th:value="${startDate}"></div>
+                <div class="col"><input type="date" name="endDate" class="form-control" th:value="${endDate}"></div>
+                <div class="col">
+                    <select name="paymentStatus" class="form-control">
+                        <option value="">All Status</option>
+                        <option th:each="status : ${T(com.example.servingwebcontent.model.PaymentStatus).values()}"
+                                th:value="${status}" th:text="${status}" th:selected="${status == paymentStatus}"></option>
+                    </select>
+                </div>
+                <div class="col"><button type="submit" class="btn btn-secondary">Search</button></div>
+            </div>
+        </form>
+        <table class="table">
+            <thead><tr><th>Invoice ID</th><th>Customer</th><th>Car</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                <tr th:each="i : ${invoices}">
+                    <td th:text="${i.invoiceId}"></td>
+                    <td th:text="${i.customer.name}"></td>
+                    <td th:text="${i.car.model}"></td>
+                    <td th:text="${#dates.format(i.date, 'dd/MM/yyyy')}"></td>
+                    <td th:text="${#numbers.formatDecimal(i.totalAmount, 0, 'COMMA', 2, 'POINT')} + ' VND'"></td>
+                    <td th:text="${i.paymentStatus}"></td>
+                    <td>
+                        <a th:href="@{/invoices/edit/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-warning">Edit</a>
+                        <a th:href="@{/invoices/delete/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                        <a th:href="@{/invoices/detail/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-info">Detail</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <nav><ul class="pagination">
+            <li class="page-item" th:class="${currentPage == 0} ? 'disabled'"><a class="page-link" th:href="@{/invoices(page=0)}">First</a></li>
+            <li class="page-item" th:class="${currentPage == 0} ? 'disabled'"><a class="page-link" th:href="@{/invoices(page=${currentPage - 1})}">Previous</a></li>
+            <li class="page-item" th:each="p : ${#numbers.sequence(0, totalPages - 1)}" th:class="${currentPage == p} ? 'active'">
+                <a class="page-link" th:text="${p + 1}" th:href="@{/invoices(page=${p})}"></a>
+            </li>
+            <li class="page-item" th:class="${currentPage + 1 == totalPages} ? 'disabled'"><a class="page-link" th:href="@{/invoices(page=${currentPage + 1})}">Next</a></li>
+            <li class="page-item" th:class="${currentPage + 1 == totalPages} ? 'disabled'"><a class="page-link" th:href="@{/invoices(page=${totalPages - 1})}">Last</a></li>
+        </ul></nav>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </html>
