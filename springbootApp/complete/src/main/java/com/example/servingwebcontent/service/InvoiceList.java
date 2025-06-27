@@ -5,8 +5,11 @@ import com.example.servingwebcontent.model.Customer;
 import com.example.servingwebcontent.model.Invoice;
 import com.example.servingwebcontent.repository.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import java.util.List;
+
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -18,7 +21,10 @@ public class InvoiceList {
     @Autowired
     private CustomerList customerList;
 
-    public void createInvoice(String invoiceId, String customerId, String carId) {
+    public void createInvoice(String invoiceId, String customerId, String carId, double totalAmount) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+        }
         if (invoiceRepository.existsById(invoiceId)) {
             throw new IllegalArgumentException("Invoice ID " + invoiceId + " already exists!");
         }
@@ -30,61 +36,92 @@ public class InvoiceList {
         if (car == null) {
             throw new IllegalArgumentException("Car with ID " + carId + " not found!");
         }
-        if (car.getStatus().equals("Sold")) {
-            throw new IllegalStateException("Car with ID " + carId + " is already sold!");
+        if (!"Available".equals(car.getStatus())) {
+            throw new IllegalStateException("Car with ID " + carId + " is not available!");
         }
-        Invoice invoice = new Invoice(invoiceId, customer, car);
-        invoice.setTotalAmount(car.getPrice());
+        if (totalAmount <= 0) {
+            throw new IllegalArgumentException("Total amount must be positive!");
+        }
+        Invoice invoice = new Invoice(invoiceId, customer, car, totalAmount);
         invoiceRepository.save(invoice);
         customer.addPurchase(invoice);
-        car.sellCar();
-        // Đảm bảo truyền đủ 5 tham số: id, name, email, phone, address
-        customerList.updateCustomer(
-            customer.getId(),
-            customer.getName(),
-            customer.getEmail(),
-            customer.getPhoneNumber(),
-            customer.getAddress()
-        );
+        car.setStatus("Sold");
+        customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
+                customer.getAddress(), customer.getRegistrationDate());
+        carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
+                car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
     }
 
-    public List<Invoice> getAllInvoices() {
-        return invoiceRepository.findAll();
+    public Page<Invoice> getAllInvoices(PageRequest pageRequest) {
+        return invoiceRepository.findAll(pageRequest);
     }
 
     public void deleteInvoice(String invoiceId) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+        }
         Optional<Invoice> invoiceOpt = invoiceRepository.findById(invoiceId);
         if (invoiceOpt.isEmpty()) {
             throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
         }
         Invoice invoice = invoiceOpt.get();
-        Customer customer = customerList.findCustomer(invoice.getCustomerId());
+        Customer customer = invoice.getCustomer();
         if (customer != null) {
             customer.deletePurchase(invoiceId);
-            customerList.updateCustomer(customer.getCustomerId(), customer.getName(), customer.getEmail(), customer.getPhone(), customer.getAddress());
+            customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
+                    customer.getAddress(), customer.getRegistrationDate());
         }
-        Car car = carList.findCar(invoice.getCarId());
+        Car car = invoice.getCar();
         if (car != null) {
             car.setStatus("Available");
-            carList.updateCar(
-                car.getCarId(),
-                car.getBrand(),
-                car.getModel(),
-                car.getYear(),
-                car.getPrice(),
-                car.getStatus(),
-                car.getImportDate()
-            );
+            carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
+                    car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
         }
         invoiceRepository.deleteById(invoiceId);
     }
 
     public Invoice findInvoice(String invoiceId) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+        }
         Optional<Invoice> invoiceOpt = invoiceRepository.findById(invoiceId);
         return invoiceOpt.orElse(null);
     }
 
-    public List<Invoice> getInvoices() {
-        return invoiceRepository.findAll();
+    public void updateInvoice(String invoiceId, Customer customer, Car car, double totalAmount) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invoice ID cannot be null or empty!");
+        }
+        Optional<Invoice> invoiceOpt = invoiceRepository.findById(invoiceId);
+        if (invoiceOpt.isEmpty()) {
+            throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
+        }
+        Invoice invoice = invoiceOpt.get();
+        if (totalAmount <= 0) {
+            throw new IllegalArgumentException("Total amount must be positive!");
+        }
+        if (customer != null) invoice.setCustomer(customer);
+        if (car != null) invoice.setCar(car);
+        invoice.setTotalAmount(totalAmount);
+        invoiceRepository.save(invoice);
+        if (customer != null) {
+            customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
+                    customer.getAddress(), customer.getRegistrationDate());
+        }
+        if (car != null && !"Sold".equals(car.getStatus())) {
+            car.setStatus("Sold");
+            carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
+                    car.getStatus(), car.getImportDate(), car.getQuantity()); // Thêm quantity
+        }
+    }
+
+    public Page<Invoice> getInvoicesByDateRange(Date startDate, Date endDate, PageRequest pageRequest) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Start date and end date cannot be null!");
+        }
+        if (startDate.after(endDate)) {
+            throw new IllegalArgumentException("Start date cannot be after end date!");
+        }
+        return invoiceRepository.findByDateBetween(startDate, endDate, pageRequest);
     }
 }

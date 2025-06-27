@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Customer Detail</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>.card { max-width: 600px; margin: 0 auto; margin-top: 20px; }</style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Customer Detail</h1>
+        <div class="card">
+            <div class="card-body">
+                <p><strong>ID:</strong> <span th:text="${customer.id}"></span></p>
+                <p><strong>Name:</strong> <span th:text="${customer.name}"></span></p>
+                <p><strong>Email:</strong> <span th:text="${customer.email}"></span></p>
+                <p><strong>Phone Number:</strong> <span th:text="${customer.phoneNumber}"></span></p>
+                <p><strong>Address:</strong> <span th:text="${customer.address}"></span></p>
+                <p><strong>Registration Date:</strong> <span th:text="${#dates.format(customer.registrationDate, 'dd/MM/yyyy')}"></span></p>
+                <p><strong>Total Purchase Amount:</strong>
+                    <span th:text="|${#numbers.formatDecimal(customer.totalPurchaseAmount, 0, 'COMMA', 2, 'POINT')} VND|"></span>
+                </p>
+                <h4>Purchase History</h4>
+                <ul th:each="invoice : ${customer.purchaseHistory}">
+                    <li>
+                        Invoice ID: <span th:text="${invoice.invoiceId}"></span>,
+                        Date: <span th:text="${#dates.format(invoice.date, 'dd/MM/yyyy')}"></span>,
+                        Amount: <span th:text="|${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT')} VND|"></span>
+                    </li>
+                </ul>
+                <a href="/customers" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

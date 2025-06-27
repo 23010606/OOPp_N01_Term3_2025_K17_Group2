@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Invoice List</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .error { color: red; }
+        .success { color: green; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .actions a { margin-right: 10px; text-decoration: none; color: #007BFF; }
+    </style>
+</head>
+<body>
+    <h1>Invoice List</h1>
+    <div th:if="${error}" class="error" th:text="${error}"></div>
+    <div th:if="${message}" class="success" th:text="${message}"></div>
+    <a href="/create-invoice">Create New Invoice</a>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Customer ID</th>
+            <th>Car ID</th>
+            <th>Date</th>
+            <th>Total Amount</th>
+            <th>Actions</th>
+        </tr>
+        <tr th:each="invoice : ${invoices}">
+            <td th:text="${invoice.invoiceId}"></td>
+            <td th:text="${invoice.customerId}"></td>
+            <td th:text="${invoice.carId}"></td>
+            <td th:text="${#dates.format(invoice.date, 'dd/MM/yyyy')}"></td>
+            <td th:text="${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT')} + ' VND'"></td>
+            <td class="actions">
+                <a th:href="@{/invoices/delete/{invoiceId}(invoiceId=${invoice.invoiceId})}" onclick="return confirm('Are you sure?')">Delete</a>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

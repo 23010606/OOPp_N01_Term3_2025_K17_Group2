@@ -1,12 +1,8 @@
 package com.example.servingwebcontent.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Transient;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
-
+import jakarta.persistence.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -17,84 +13,61 @@ public class Customer {
     private String email;
     private String phoneNumber;
     private String address;
-    @Transient
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
-    private List<Invoice> purchaseHistory;
-    
-    public Customer() {}
-    
 
-    // Constructor đầy đủ
-    public Customer(String id, String name, String email, String phone, String address) {
+    @Temporal(TemporalType.DATE) // Thêm annotation này để lưu ngày đúng chuẩn JPA
+    private Date registrationDate;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true) // Thêm orphanRemoval
+    private List<Invoice> purchaseHistory;
+
+    public Customer() {
+        this.purchaseHistory = new ArrayList<>();
+    }
+
+    public Customer(String id, String name, String email, String phoneNumber, String address, Date registrationDate) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.phoneNumber = phone; // Sửa lại dòng này
+        this.phoneNumber = phoneNumber;
         this.address = address;
+        this.registrationDate = registrationDate;
         this.purchaseHistory = new ArrayList<>();
     }
 
     // Getters and Setters
-    public String getId(){ 
-        return id;
-    }
-    public void setId(String id){ 
-        this.id = id;
-    }
-    public String getName(){ 
-        return name;
-    }
-    public void setName(String name){ 
-        this.name = name;
-    }
-    public String getEmail(){
-        return email;
-    }
-    public void setEmail(String email){ 
-        this.email = email;
-    }
-    public String getPhoneNumber(){ 
-        return phoneNumber;
-    }
-    public void setPhoneNumber(String phoneNumber){ 
-        this.phoneNumber = phoneNumber;
-    }
-    public String getAddress(){ 
-        return address;
-    }
-    public void setAddress(String address){ 
-        this.address = address;
-    }
-    public List<Invoice> getPurchaseHistory(){ 
-        return purchaseHistory;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public Date getRegistrationDate() { return registrationDate; }
+    public void setRegistrationDate(Date registrationDate) { this.registrationDate = registrationDate; }
+    public List<Invoice> getPurchaseHistory() { return purchaseHistory; }
+    public void setPurchaseHistory(List<Invoice> purchaseHistory) { this.purchaseHistory = purchaseHistory; }
 
     // Methods
-    public void addPurchase(Invoice invoice){ 
-        purchaseHistory.add(invoice);
+    public void addPurchase(Invoice invoice) {
+        if (invoice != null && !purchaseHistory.contains(invoice)) { // Tránh trùng lặp
+            purchaseHistory.add(invoice);
+            invoice.setCustomer(this); // Đảm bảo mối quan hệ hai chiều
+        }
     }
-    public void deletePurchase(String invoiceId){ 
-        purchaseHistory.removeIf(invoice -> invoice.getInvoiceId().equals(invoiceId));
+    public void deletePurchase(String invoiceId) {
+        purchaseHistory.removeIf(invoice -> invoice != null && invoice.getInvoiceId().equals(invoiceId));
     }
     public String getCustomerInfo() {
-        return "ID: " + id +
-               ", Name: " + name +
-               ", Email: " + email +
-               ", Phone: " + phoneNumber +
-               ", Address: " + address;
+        return "ID: " + id + ", Name: " + name + ", Email: " + email + ", Phone: " + phoneNumber + ", Address: " + address +
+               ", Registration Date: " + (registrationDate != null ? registrationDate : "N/A");
     }
-      public double getTotalPurchaseAmount() {
+    public double getTotalPurchaseAmount() {
         return purchaseHistory.stream()
+                .filter(invoice -> invoice != null)
                 .mapToDouble(Invoice::getTotalAmount)
                 .sum();
-    }
-    public String getCustomerId(){ 
-        return id; 
-    }
-    public String getPhone(){ 
-        return phoneNumber;
-    }
-    public void setPhone(String phone){ 
-        this.phoneNumber = phone; 
     }
 }

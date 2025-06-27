@@ -2,40 +2,41 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Edit Customer</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .error { color: red; }
-        .form-group { margin-bottom: 15px; }
-        label { display: inline-block; width: 100px; }
-        input { padding: 5px; }
-        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>.card { max-width: 600px; margin: 0 auto; margin-top: 20px; }</style>
 </head>
 <body>
-    <h1>Edit Customer</h1>
-    <form th:action="@{/customers/edit}" method="post">
-        <div class="form-group">
-            <label for="id">ID:</label>
-            <input type="text" id="id" name="id" th:value="${customer.id}" readonly>
+    <div class="container">
+        <h1 class="mt-4">Edit Customer</h1>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}" th:remove="if-empty"></div>
+        <div th:if="${message}" class="alert alert-success" th:text="${message}" th:remove="if-empty"></div>
+
+        <div class="card">
+            <div class="card-body">
+                <form th:action="@{/customers/edit/{id}(id=${customer.id})}" method="post" class="row g-3">
+                    <div class="col-md-6"><label class="form-label">ID:</label>
+                        <input type="text" name="id" class="form-control" th:value="${customer.id}" readonly>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">Name:</label>
+                        <input type="text" name="name" class="form-control" th:value="${customer.name}" required>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">Email:</label>
+                        <input type="email" name="email" class="form-control" th:value="${customer.email}" required>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">Phone Number:</label>
+                        <input type="text" name="phoneNumber" class="form-control" th:value="${customer.phoneNumber}" required>
+                    </div>
+                    <div class="col-md-6"><label class="form-label">Address:</label>
+                        <input type="text" name="address" class="form-control" th:value="${customer.address}" required>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Update Customer</button>
+                        <a href="/customers" class="btn btn-secondary ms-2">Cancel</a>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" th:value="${customer.name}" required>
-        </div>
-        <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" th:value="${customer.email}" required>
-        </div>
-        <div class="form-group">
-            <label for="phoneNumber">Phone:</label>
-            <input type="text" id="phoneNumber" name="phoneNumber" th:value="${customer.phoneNumber}" required>
-        </div>
-        <div class="form-group">
-            <label for="address">Address:</label>
-            <input type="text" id="address" name="address" th:value="${customer.address}" required>
-        </div>
-        <button type="submit">Update Customer</button>
-    </form>
-    <a href="/customers">Back to List</a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

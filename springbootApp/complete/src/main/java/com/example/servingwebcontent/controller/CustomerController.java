@@ -3,12 +3,18 @@ package com.example.servingwebcontent.controller;
 import com.example.servingwebcontent.model.Customer;
 import com.example.servingwebcontent.service.CustomerList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.Date;
+
 @Controller
+@RequestMapping("/customers")
 public class CustomerController {
     private final CustomerList customerList;
 
@@ -17,22 +23,28 @@ public class CustomerController {
         this.customerList = customerList;
     }
 
-    @GetMapping("/customers")
-    public String showCustomers(Model model) {
-        model.addAttribute("customers", customerList.getAllCustomers());
+    @GetMapping
+    public String showCustomers(@RequestParam(defaultValue = "0") int page,
+                            @RequestParam(defaultValue = "10") int size,
+                            Model model) {
+        Page<Customer> customerPage = customerList.getAllCustomers(PageRequest.of(page, size));
+        model.addAttribute("customers", customerPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", customerPage.getTotalPages());
         model.addAttribute("customer", new Customer());
         return "customer/customer-list";
     }
 
-    @GetMapping("/customers/add")
+    @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("customer", new Customer());
         return "customer/add-customer";
     }
 
-    @PostMapping("/customers/add")
-    public String addCustomer(@ModelAttribute Customer customer, Model model, RedirectAttributes redirectAttributes) {
+    @PostMapping("/add")
+    public String addCustomer(@ModelAttribute Customer customer, RedirectAttributes redirectAttributes) {
         try {
+            customer.setRegistrationDate(new Date()); // Thiết lập ngày đăng ký mặc định
             customerList.addCustomer(customer);
             redirectAttributes.addFlashAttribute("message", "Customer added successfully!");
         } catch (Exception e) {
@@ -41,26 +53,19 @@ public class CustomerController {
         return "redirect:/customers";
     }
 
-    @GetMapping("/customers/edit/{id}")
+    @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable String id, Model model) {
         Customer customer = customerList.findCustomer(id);
-        if (customer == null) {
-            return "redirect:/customers";
-        }
+        if (customer == null) return "redirect:/customers";
         model.addAttribute("customer", customer);
         return "customer/edit-customer";
     }
 
-    @PostMapping("/customers/edit")
+    @PostMapping("/edit")
     public String editCustomer(@ModelAttribute Customer customer, RedirectAttributes redirectAttributes) {
         try {
-            customerList.updateCustomer(
-                customer.getId(),
-                customer.getName(),
-                customer.getEmail(),
-                customer.getPhoneNumber(),
-                customer.getAddress()
-            );
+            customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
+                    customer.getAddress(), customer.getRegistrationDate());
             redirectAttributes.addFlashAttribute("message", "Customer updated successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -68,7 +73,7 @@ public class CustomerController {
         return "redirect:/customers";
     }
 
-    @GetMapping("/customers/delete/{id}")
+    @GetMapping("/delete/{id}")
     public String deleteCustomer(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
             customerList.deleteCustomer(id);
@@ -79,36 +84,47 @@ public class CustomerController {
         return "redirect:/customers";
     }
 
-    // Hiển thị lịch sử giao dịch
-    @GetMapping("/customers/history/{id}")
-    public String showPurchaseHistory(@PathVariable String id, Model model) {
-        try {
-            model.addAttribute("invoices", customerList.getPurchaseHistory(id));
-            model.addAttribute("customerId", id);
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-        }
-        return "customer/purchase-history";
-    }
-
-    // Hiển thị tổng tiền mua sắm
-    @GetMapping("/customers/total/{id}")
-    public String showTotalPurchase(@PathVariable String id, Model model) {
-        try {
-            double total = customerList.getTotalPurchaseAmount(id);
-            model.addAttribute("customerId", id);
-            model.addAttribute("total", total);
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-        }
-        return "customer/total-purchase";
-    }
-
-    // Tìm kiếm khách hàng
-    @GetMapping("/customers/search")
-    public String searchCustomers(@RequestParam String keyword, Model model) {
-        model.addAttribute("customers", customerList.searchCustomers(keyword));
-        model.addAttribute("customer", new Customer());
+    @GetMapping("/search")
+    public String searchCustomers(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String address,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        Page<Customer> customerPage = customerList.searchCustomers(name, phoneNumber, email, address, PageRequest.of(page, size));
+        model.addAttribute("customers", customerPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", customerPage.getTotalPages());
+        model.addAttribute("name", name);
+        model.addAttribute("phoneNumber", phoneNumber);
+        model.addAttribute("email", email);
+        model.addAttribute("address", address);
         return "customer/customer-list";
+    }
+
+    @GetMapping("/filter/date")
+    public String filterByRegistrationDate(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        Page<Customer> customerPage = customerList.filterByRegistrationDate(startDate, endDate, PageRequest.of(page, size));
+        model.addAttribute("customers", customerPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", customerPage.getTotalPages());
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        return "customer/customer-list";
+    }
+
+    @GetMapping("/detail/{id}")
+    public String showCustomerDetail(@PathVariable String id, Model model) {
+        Customer customer = customerList.findCustomer(id);
+        if (customer == null) return "redirect:/customers";
+        model.addAttribute("customer", customer);
+        return "customer/customer-detail";
     }
 }

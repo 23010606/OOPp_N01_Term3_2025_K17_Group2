@@ -6,11 +6,10 @@
         body { font-family: Arial, sans-serif; margin: 40px; }
         .form-group { margin-bottom: 15px; }
         label { display: inline-block; width: 100px; }
-        input, select { padding: 5px; }
+        select, input { padding: 5px; }
+        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; }
         .error { color: red; }
         .success { color: green; }
-        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; }
-        button:hover { background-color: #45a049; }
     </style>
 </head>
 <body>
@@ -20,28 +19,24 @@
     <form th:action="@{/create-invoice}" method="post">
         <div class="form-group">
             <label for="invoiceId">Invoice ID:</label>
-            <input type="text" id="invoiceId" name="invoiceId" required/>
+            <input type="text" id="invoiceId" name="invoiceId" required>
         </div>
         <div class="form-group">
             <label for="customerId">Customer:</label>
             <select id="customerId" name="customerId" required>
                 <option value="">Select Customer</option>
-                <option th:each="customer : ${customers}" 
-                        th:value="${customer.customerId}" 
-                        th:text="${customer.name}"></option>
+                <option th:each="customer : ${customers}" th:value="${customer.customerId}" th:text="${customer.customerId + ' - ' + customer.name}"></option>
             </select>
         </div>
         <div class="form-group">
             <label for="carId">Car:</label>
             <select id="carId" name="carId" required>
                 <option value="">Select Car</option>
-                <option th:each="car : ${cars}" 
-                        th:value="${car.carId}" 
-                        th:text="${car.brand + ' ' + car.model}"></option>
+                <option th:each="car : ${cars}" th:value="${car.carId}" th:text="${car.carId + ' - ' + car.brand + ' ' + car.model}"></option>
             </select>
         </div>
         <button type="submit">Create Invoice</button>
     </form>
-    <a href="/">Back to Home</a>
+    <a href="/invoices">Back to Invoice List</a>
 </body>
 </html>

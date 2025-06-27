@@ -1,11 +1,14 @@
 package com.example.servingwebcontent.service;
 
 import com.example.servingwebcontent.model.Customer;
-import com.example.servingwebcontent.model.Invoice;
 import com.example.servingwebcontent.repository.CustomerRepository;
-import com.example.servingwebcontent.repository.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,23 +16,15 @@ import java.util.Optional;
 public class CustomerList {
     @Autowired
     private CustomerRepository customerRepository;
-    @Autowired
-    private InvoiceRepository invoiceRepository;
 
-    // CRUD
     public void addCustomer(Customer customer) {
         if (customerRepository.existsById(customer.getId())) {
             throw new IllegalArgumentException("Customer ID " + customer.getId() + " already exists!");
         }
-        // Có thể thêm kiểm tra định dạng email/phone nếu cần
         customerRepository.save(customer);
     }
 
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
-    }
-
-    public void updateCustomer(String id, String name, String email, String phoneNumber, String address) {
+    public void updateCustomer(String id, String name, String email, String phoneNumber, String address, Date registrationDate) {
         Optional<Customer> customerOpt = customerRepository.findById(id);
         if (customerOpt.isEmpty()) {
             throw new IllegalArgumentException("Customer with ID " + id + " not found!");
@@ -39,6 +34,7 @@ public class CustomerList {
         customer.setEmail(email);
         customer.setPhoneNumber(phoneNumber);
         customer.setAddress(address);
+        customer.setRegistrationDate(registrationDate);
         customerRepository.save(customer);
     }
 
@@ -49,38 +45,37 @@ public class CustomerList {
         }
         Customer customer = customerOpt.get();
         if (!customer.getPurchaseHistory().isEmpty()) {
-            throw new IllegalStateException("Cannot delete customer with existing invoices!");
+            throw new IllegalStateException("Cannot delete customer with purchase history!");
         }
         customerRepository.deleteById(id);
     }
 
-
-    // Hỗ trợ: Tìm khách hàng theo ID
     public Customer findCustomer(String id) {
-        Optional<Customer> customerOpt = customerRepository.findById(id);
-        return customerOpt.orElse(null);
+        return customerRepository.findById(id).orElse(null);
     }
 
-    // Thêm: Lấy lịch sử giao dịch
-    public List<Invoice> getPurchaseHistory(String customerId) {
-        Customer customer = findCustomer(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("Customer with ID " + customerId + " not found!");
+    public Page<Customer> searchCustomers(String name, String phoneNumber, String email, String address, PageRequest pageRequest) {
+        List<Customer> all = customerRepository.findAll();
+        List<Customer> filtered = all.stream()
+            .filter(c -> name == null || name.isBlank() || c.getName().toLowerCase().contains(name.toLowerCase()))
+            .filter(c -> phoneNumber == null || phoneNumber.isBlank() || c.getPhoneNumber().contains(phoneNumber))
+            .filter(c -> email == null || email.isBlank() || c.getEmail().toLowerCase().contains(email.toLowerCase()))
+            .filter(c -> address == null || address.isBlank() || c.getAddress().toLowerCase().contains(address.toLowerCase()))
+            .toList();
+        int start = (int) pageRequest.getOffset();
+        int end = Math.min((start + pageRequest.getPageSize()), filtered.size());
+        List<Customer> pageContent = (start >= filtered.size()) ? List.of() : filtered.subList(start, end);
+        return new PageImpl<>(pageContent, pageRequest, filtered.size());
+    }
+
+    public Page<Customer> filterByRegistrationDate(Date startDate, Date endDate, PageRequest pageRequest) {
+        if (startDate == null || endDate == null) {
+            throw new IllegalArgumentException("Start date and end date are required!");
         }
-        return customer.getPurchaseHistory();
+        return customerRepository.findByRegistrationDateBetween(startDate, endDate, pageRequest);
     }
 
-    // Thêm: Tính tổng tiền mua sắm
-    public double getTotalPurchaseAmount(String customerId) {
-        Customer customer = findCustomer(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("Customer with ID " + customerId + " not found!");
-        }
-        return customer.getTotalPurchaseAmount();
-    }
-
-    // Thêm: Tìm kiếm khách hàng
-    public List<Customer> searchCustomers(String keyword) {
-        return customerRepository.findByKeyword(keyword);
+    public Page<Customer> getAllCustomers(PageRequest pageRequest) {
+        return customerRepository.findAll(pageRequest);
     }
 }

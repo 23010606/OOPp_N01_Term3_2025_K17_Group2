@@ -3,6 +3,8 @@ package com.example.servingwebcontent.controller;
 import com.example.servingwebcontent.model.Car;
 import com.example.servingwebcontent.service.CarList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +21,66 @@ public class CarController {
 
     @GetMapping("/cars")
     public String showCars(Model model) {
-        model.addAttribute("cars", carList.getAllCars());
-        model.addAttribute("car", new Car()); // Thêm đối tượng mới để hỗ trợ form
+        model.addAttribute("cars", carList.getAllCarsPage(PageRequest.of(0, 10)).getContent());
+        model.addAttribute("car", new Car());
+        return "car/car-list";
+    }
+
+    @GetMapping("/cars/search")
+    public String searchCars(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        Page<Car> carPage = carList.searchCarsByBrandOrModelPage(keyword, PageRequest.of(page, size));
+        model.addAttribute("cars", carPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", carPage.getTotalPages());
+        model.addAttribute("keyword", keyword);
+        return "car/car-list";
+    }
+
+    @GetMapping("/cars/status")
+    public String filterByStatus(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        if (status == null || status.isEmpty()) {
+            Page<Car> carPage = carList.getAllCarsPage(PageRequest.of(page, size));
+            model.addAttribute("cars", carPage.getContent());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", carPage.getTotalPages());
+            model.addAttribute("status", status);
+            return "car/car-list";
+        }
+        Page<Car> carPage = carList.getCarsByStatusPage(status, PageRequest.of(page, size));
+        model.addAttribute("cars", carPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", carPage.getTotalPages());
+        model.addAttribute("status", status);
+        return "car/car-list";
+    }
+
+    @GetMapping("/cars/quantity")
+    public String filterByQuantity(
+            @RequestParam(required = false) String quantityStatus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        if (quantityStatus == null || quantityStatus.isEmpty()) {
+            Page<Car> carPage = carList.getAllCarsPage(PageRequest.of(page, size));
+            model.addAttribute("cars", carPage.getContent());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", carPage.getTotalPages());
+            model.addAttribute("quantityStatus", quantityStatus);
+            return "car/car-list";
+        }
+        Page<Car> carPage = carList.getCarsByQuantityStatusPage(quantityStatus, PageRequest.of(page, size));
+        model.addAttribute("cars", carPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", carPage.getTotalPages());
+        model.addAttribute("quantityStatus", quantityStatus);
         return "car/car-list";
     }
 
@@ -31,7 +91,7 @@ public class CarController {
     }
 
     @PostMapping("/cars/add")
-    public String addCar(@ModelAttribute Car car, Model model, RedirectAttributes redirectAttributes) {
+    public String addCar(@ModelAttribute Car car, RedirectAttributes redirectAttributes) {
         try {
             carList.addCar(car);
             redirectAttributes.addFlashAttribute("message", "Car added successfully!");
@@ -44,9 +104,7 @@ public class CarController {
     @GetMapping("/cars/edit/{carId}")
     public String showEditForm(@PathVariable String carId, Model model) {
         Car car = carList.findCar(carId);
-        if (car == null) {
-            return "redirect:/cars";
-        }
+        if (car == null) return "redirect:/cars";
         model.addAttribute("car", car);
         return "car/edit-car";
     }
@@ -54,12 +112,6 @@ public class CarController {
     @PostMapping("/cars/edit")
     public String editCar(@ModelAttribute Car car, RedirectAttributes redirectAttributes) {
         try {
-            if (car.getPrice() < 0) {
-                throw new IllegalArgumentException("Price cannot be negative!");
-            }
-            if (car.getYear() < 1900) {
-                throw new IllegalArgumentException("Year must be at least 1900!");
-            }
             carList.updateCar(
                 car.getCarId(),
                 car.getBrand(),
@@ -67,7 +119,8 @@ public class CarController {
                 car.getYear(),
                 car.getPrice(),
                 car.getStatus(),
-                car.getImportDate()
+                car.getImportDate(),
+                car.getQuantity()
             );
             redirectAttributes.addFlashAttribute("message", "Car updated successfully!");
         } catch (Exception e) {
@@ -87,39 +140,11 @@ public class CarController {
         return "redirect:/cars";
     }
 
-    // Thêm: Lọc xe theo năm
-    @GetMapping("/cars/year/{year}")
-    public String showCarsByYear(@PathVariable int year, Model model) {
-        try {
-            model.addAttribute("cars", carList.getCarsByYear(year));
-            model.addAttribute("message", "Cars filtered by year " + year);
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-        }
-        return "car/car-list";
-    }
-
-    // Thêm: Lọc xe theo khoảng giá
-    @GetMapping("/cars/price")
-    public String showCarsByPrice(@RequestParam double minPrice, @RequestParam double maxPrice, Model model) {
-        try {
-            model.addAttribute("cars", carList.getCarsByPriceRange(minPrice, maxPrice));
-            model.addAttribute("message", "Cars filtered by price range " + minPrice + " - " + maxPrice + " VND");
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-        }
-        return "car/car-list";
-    }
-
-    // Thêm: Lọc xe theo trạng thái
-    @GetMapping("/cars/status")
-    public String showCarsByStatus(@RequestParam String status, Model model) {
-        try {
-            model.addAttribute("cars", carList.getCarsByStatus(status));
-            model.addAttribute("message", "Cars filtered by status " + status);
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-        }
-        return "car/car-list";
+    @GetMapping("/cars/detail/{carId}")
+    public String showCarDetail(@PathVariable String carId, Model model) {
+        Car car = carList.findCar(carId);
+        if (car == null) return "redirect:/cars";
+        model.addAttribute("car", car);
+        return "car/car-detail";
     }
 }
