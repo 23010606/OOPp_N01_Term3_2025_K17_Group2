@@ -3,11 +3,14 @@ package com.example.servingwebcontent.controller;
 import com.example.servingwebcontent.model.Invoice;
 import com.example.servingwebcontent.model.Customer;
 import com.example.servingwebcontent.model.Car;
+import com.example.servingwebcontent.model.PaymentStatus;
 import com.example.servingwebcontent.service.CarList;
 import com.example.servingwebcontent.service.CustomerList;
 import com.example.servingwebcontent.service.InvoiceList;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +33,17 @@ public class InvoiceController {
         this.carList = carList;
     }
 
+    // Danh sách hóa đơn
+    @GetMapping
+    public String showInvoices(Model model, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        Page<Invoice> invoicePage = invoiceList.getAllInvoices(PageRequest.of(page, size));
+        model.addAttribute("invoices", invoicePage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", invoicePage.getTotalPages());
+        return "invoice/invoice-list";
+    }
+
+    // Hiển thị form tạo hóa đơn
     @GetMapping("/create")
     public String showCreateInvoiceForm(Model model, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         model.addAttribute("customers", customerList.getAllCustomers(PageRequest.of(page, size)).getContent());
@@ -37,6 +51,7 @@ public class InvoiceController {
         return "invoice/create-invoice";
     }
 
+    // Xử lý tạo hóa đơn
     @PostMapping("/create")
     public String createInvoice(@RequestParam(required = false) String invoiceId,
                                @RequestParam String customerId,
@@ -58,52 +73,14 @@ public class InvoiceController {
             }
             invoiceList.createInvoice(invoiceId, customerId, carId, totalAmount);
             redirectAttributes.addFlashAttribute("message", "Invoice created successfully!");
+            return "redirect:/invoices";
         } catch (IllegalArgumentException | IllegalStateException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/invoices/create";
         }
-        return "redirect:/invoices/create";
     }
 
-    @GetMapping
-    public String showInvoices(Model model, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        model.addAttribute("invoices", invoiceList.getAllInvoices(PageRequest.of(page, size)).getContent());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", invoiceList.getAllInvoices(PageRequest.of(page, size)).getTotalPages());
-        return "invoice/invoice-list";
-    }
-
-    @GetMapping("/detail/{invoiceId}")
-    public String showInvoiceDetail(@PathVariable String invoiceId, Model model) {
-        Invoice invoice = invoiceList.findInvoice(invoiceId);
-        if (invoice == null) {
-            return "redirect:/invoices";
-        }
-        model.addAttribute("invoice", invoice);
-        return "invoice/invoice-detail";
-    }
-
-    @GetMapping("/delete/{invoiceId}")
-    public String deleteInvoice(@PathVariable String invoiceId, RedirectAttributes redirectAttributes) {
-        if (invoiceId == null || invoiceId.trim().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Invoice ID cannot be null or empty!");
-            return "redirect:/invoices";
-        }
-        try {
-            Invoice invoice = invoiceList.findInvoice(invoiceId);
-            if (invoice == null) {
-                throw new IllegalArgumentException("Invoice not found!");
-            }
-            if (!"DRAFT".equals(invoice.getPaymentStatus()) && !"PENDING".equals(invoice.getPaymentStatus())) {
-                throw new IllegalStateException("Cannot delete paid or installment invoice!");
-            }
-            invoiceList.deleteInvoice(invoiceId);
-            redirectAttributes.addFlashAttribute("message", "Invoice deleted successfully!");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/invoices";
-    }
-
+    // Hiển thị form sửa hóa đơn
     @GetMapping("/edit/{invoiceId}")
     public String showEditInvoiceForm(@PathVariable String invoiceId, Model model, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         Invoice invoice = invoiceList.findInvoice(invoiceId);
@@ -116,6 +93,7 @@ public class InvoiceController {
         return "invoice/edit-invoice";
     }
 
+    // Xử lý sửa hóa đơn
     @PostMapping("/edit")
     public String editInvoice(@RequestParam String invoiceId,
                              @RequestParam String customerId,
@@ -145,10 +123,45 @@ public class InvoiceController {
         return "redirect:/invoices";
     }
 
+    // Xóa hóa đơn
+    @GetMapping("/delete/{invoiceId}")
+    public String deleteInvoice(@PathVariable String invoiceId, RedirectAttributes redirectAttributes) {
+        if (invoiceId == null || invoiceId.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Invoice ID cannot be null or empty!");
+            return "redirect:/invoices";
+        }
+        try {
+            Invoice invoice = invoiceList.findInvoice(invoiceId);
+            if (invoice == null) {
+                throw new IllegalArgumentException("Invoice not found!");
+            }
+            if (invoice.getPaymentStatus() != PaymentStatus.DRAFT && invoice.getPaymentStatus() != PaymentStatus.PENDING) {
+                throw new IllegalStateException("Cannot delete paid or installment invoice!");
+            }
+            invoiceList.deleteInvoice(invoiceId);
+            redirectAttributes.addFlashAttribute("message", "Invoice deleted successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/invoices";
+    }
+
+    // Xem chi tiết hóa đơn
+    @GetMapping("/detail/{invoiceId}")
+    public String showInvoiceDetail(@PathVariable String invoiceId, Model model) {
+        Invoice invoice = invoiceList.findInvoice(invoiceId);
+        if (invoice == null) {
+            return "redirect:/invoices";
+        }
+        model.addAttribute("invoice", invoice);
+        return "invoice/invoice-detail";
+    }
+
+    // Cập nhật thanh toán
     @PostMapping("/updatePayment")
     public String updatePayment(@RequestParam String invoiceId,
                                @RequestParam double amount,
-                               @RequestParam Date paymentDate,
+                               @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date paymentDate,
                                RedirectAttributes redirectAttributes) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Invoice ID cannot be null or empty!");
@@ -168,11 +181,12 @@ public class InvoiceController {
         return "redirect:/invoices/detail/" + invoiceId;
     }
 
+    // Tìm kiếm hóa đơn
     @GetMapping("/search")
     public String searchInvoices(@RequestParam(required = false) String invoiceId,
                             @RequestParam(required = false) String customerName,
-                            @RequestParam(required = false) Date startDate,
-                            @RequestParam(required = false) Date endDate,
+                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
                             @RequestParam(required = false) PaymentStatus paymentStatus,
                             @RequestParam(defaultValue = "0") int page,
                             @RequestParam(defaultValue = "10") int size,

@@ -67,7 +67,7 @@ public class InvoiceList {
             throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
         }
         Invoice invoice = invoiceOpt.get();
-        if (!"DRAFT".equals(invoice.getPaymentStatus()) && !"PENDING".equals(invoice.getPaymentStatus())) {
+        if (invoice.getPaymentStatus() != PaymentStatus.DRAFT && invoice.getPaymentStatus() != PaymentStatus.PENDING) {
             throw new IllegalStateException("Cannot delete paid or installment invoice!");
         }
         Customer customer = invoice.getCustomer();
