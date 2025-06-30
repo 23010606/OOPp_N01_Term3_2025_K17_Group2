@@ -2,20 +2,36 @@ package com.example.servingwebcontent.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.*;
 import java.util.Date;
 import org.springframework.format.annotation.DateTimeFormat;
 
 @Entity
 public class Car {
     @Id
+    @NotBlank(message = "Car ID is required")
     private String carId;
+
+    @NotBlank(message = "Brand is required")
     private String brand;
+
+    @NotBlank(message = "Model is required")
     private String model;
+
+    @Min(value = 1900, message = "Year must be >= 1900")
     private int year;
+
+    @Positive(message = "Price must be positive")
     private double price;
+
+    @NotBlank(message = "Status is required")
     private String status;
+
+    @NotNull(message = "Import date is required")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date importDate;
+
+    @Min(value = 0, message = "Quantity must be >= 0")
     private int quantity; // Số lượng xe trong kho
 
     // Getters and Setters

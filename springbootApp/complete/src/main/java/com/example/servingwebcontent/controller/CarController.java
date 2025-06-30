@@ -2,11 +2,13 @@ package com.example.servingwebcontent.controller;
 
 import com.example.servingwebcontent.model.Car;
 import com.example.servingwebcontent.service.CarList;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -91,7 +93,11 @@ public class CarController {
     }
 
     @PostMapping("/cars/add")
-    public String addCar(@ModelAttribute Car car, RedirectAttributes redirectAttributes) {
+    public String addCar(@ModelAttribute @Valid Car car, BindingResult result, Model model, RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            model.addAttribute("car", car);
+            return "car/add-car";
+        }
         try {
             carList.addCar(car);
             redirectAttributes.addFlashAttribute("message", "Car added successfully!");
@@ -110,7 +116,11 @@ public class CarController {
     }
 
     @PostMapping("/cars/edit")
-    public String editCar(@ModelAttribute Car car, RedirectAttributes redirectAttributes) {
+    public String editCar(@ModelAttribute @Valid Car car, BindingResult result, Model model, RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            model.addAttribute("car", car);
+            return "car/edit-car";
+        }
         try {
             carList.updateCar(
                 car.getCarId(),

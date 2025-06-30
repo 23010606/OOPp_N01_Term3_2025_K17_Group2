@@ -8,9 +8,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.validation.Valid;
 import java.util.Date;
 
 @Controller
@@ -42,7 +44,11 @@ public class CustomerController {
     }
 
     @PostMapping("/add")
-    public String addCustomer(@ModelAttribute Customer customer, RedirectAttributes redirectAttributes) {
+    public String addCustomer(@ModelAttribute @Valid Customer customer, BindingResult result, Model model, RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            model.addAttribute("customer", customer);
+            return "customer/add-customer";
+        }
         try {
             customer.setRegistrationDate(new Date()); // Thiết lập ngày đăng ký mặc định
             customerList.addCustomer(customer);
@@ -62,7 +68,11 @@ public class CustomerController {
     }
 
     @PostMapping("/edit")
-    public String editCustomer(@ModelAttribute Customer customer, RedirectAttributes redirectAttributes) {
+    public String editCustomer(@ModelAttribute @Valid Customer customer, BindingResult result, Model model, RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            model.addAttribute("customer", customer);
+            return "customer/edit-customer";
+        }
         try {
             customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
                     customer.getAddress(), customer.getRegistrationDate());

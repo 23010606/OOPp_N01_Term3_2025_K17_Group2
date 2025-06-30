@@ -13,22 +13,55 @@
 
         <div class="card">
             <div class="card-body">
-                <form th:action="@{/cars/add}" method="post" class="row g-3">
-                    <div class="col-md-6"><label class="form-label">ID:</label><input type="text" name="carId" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Brand:</label><input type="text" name="brand" class="form-control" required placeholder="e.g., Toyota"></div>
-                    <div class="col-md-6"><label class="form-label">Model:</label><input type="text" name="model" class="form-control" required placeholder="e.g., Camry"></div>
-                    <div class="col-md-6"><label class="form-label">Year:</label><input type="number" name="year" class="form-control" min="1900" required placeholder="e.g., 2020"></div>
-                    <div class="col-md-6"><label class="form-label">Price:</label><input type="number" name="price" class="form-control" step="0.01" min="0" required placeholder="e.g., 50000000"></div>
-                    <div class="col-md-6"><label class="form-label">Status:</label>
-                        <select name="status" class="form-select" required>
+                <form th:action="@{/cars/add}" th:object="${car}" method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">ID:</label>
+                        <input type="text" th:field="*{carId}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('carId')}" th:errors="*{carId}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Brand:</label>
+                        <input type="text" th:field="*{brand}" class="form-control" required placeholder="e.g., Toyota">
+                        <div class="text-danger" th:if="${#fields.hasErrors('brand')}" th:errors="*{brand}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Model:</label>
+                        <input type="text" th:field="*{model}" class="form-control" required placeholder="e.g., Camry">
+                        <div class="text-danger" th:if="${#fields.hasErrors('model')}" th:errors="*{model}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Year:</label>
+                        <input type="number" th:field="*{year}" class="form-control" min="1900" required placeholder="e.g., 2020">
+                        <div class="text-danger" th:if="${#fields.hasErrors('year')}" th:errors="*{year}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Price:</label>
+                        <input type="number" th:field="*{price}" class="form-control" step="0.01" min="0" required placeholder="e.g., 50000000">
+                        <div class="text-danger" th:if="${#fields.hasErrors('price')}" th:errors="*{price}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status:</label>
+                        <select th:field="*{status}" class="form-select" required>
                             <option value="Available">Available</option>
                             <option value="Sold">Sold</option>
                             <option value="Reserved">Reserved</option>
                         </select>
+                        <div class="text-danger" th:if="${#fields.hasErrors('status')}" th:errors="*{status}"></div>
                     </div>
-                    <div class="col-md-6"><label class="form-label">Import Date:</label><input type="date" name="importDate" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Quantity:</label><input type="number" name="quantity" class="form-control" min="0" required placeholder="e.g., 10"></div>
-                    <div class="col-12"><button type="submit" class="btn btn-primary">Add Car</button><a href="/cars" class="btn btn-secondary ms-2">Cancel</a></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Import Date:</label>
+                        <input type="date" th:field="*{importDate}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('importDate')}" th:errors="*{importDate}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Quantity:</label>
+                        <input type="number" th:field="*{quantity}" class="form-control" min="0" required placeholder="e.g., 10">
+                        <div class="text-danger" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Add Car</button>
+                        <a href="/cars" class="btn btn-secondary ms-2">Cancel</a>
+                    </div>
                 </form>
             </div>
         </div>

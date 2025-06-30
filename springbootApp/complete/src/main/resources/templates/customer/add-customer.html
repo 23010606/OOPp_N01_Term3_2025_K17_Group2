@@ -13,13 +13,36 @@
 
         <div class="card">
             <div class="card-body">
-                <form th:action="@{/customers/add}" method="post" class="row g-3">
-                    <div class="col-md-6"><label class="form-label">ID:</label><input type="text" name="id" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Name:</label><input type="text" name="name" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Email:</label><input type="email" name="email" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Phone Number:</label><input type="text" name="phoneNumber" class="form-control" required></div>
-                    <div class="col-md-6"><label class="form-label">Address:</label><input type="text" name="address" class="form-control" required></div>
-                    <div class="col-12"><button type="submit" class="btn btn-primary">Add Customer</button><a href="/customers" class="btn btn-secondary ms-2">Cancel</a></div>
+                <form th:action="@{/customers/add}" th:object="${customer}" method="post" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">ID:</label>
+                        <input type="text" th:field="*{id}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('id')}" th:errors="*{id}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Name:</label>
+                        <input type="text" th:field="*{name}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email:</label>
+                        <input type="email" th:field="*{email}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Phone Number:</label>
+                        <input type="text" th:field="*{phoneNumber}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Address:</label>
+                        <input type="text" th:field="*{address}" class="form-control" required>
+                        <div class="text-danger" th:if="${#fields.hasErrors('address')}" th:errors="*{address}"></div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Add Customer</button>
+                        <a href="/customers" class="btn btn-secondary ms-2">Cancel</a>
+                    </div>
                 </form>
             </div>
         </div>
