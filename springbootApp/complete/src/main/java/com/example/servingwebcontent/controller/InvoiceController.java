@@ -53,25 +53,25 @@ public class InvoiceController {
 
     // Xử lý tạo hóa đơn
     @PostMapping("/create")
-    public String createInvoice(@RequestParam(required = false) String invoiceId,
-                               @RequestParam String customerId,
-                               @RequestParam String carId,
-                               @RequestParam double totalAmount,
-                               RedirectAttributes redirectAttributes) {
+    public String createInvoice(
+        @RequestParam(required = false) String invoiceId,
+        @RequestParam String customerId,
+        @RequestParam String carId,
+        @RequestParam double totalAmount,
+        @RequestParam(required = false) String note,
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date pickupDate,
+        RedirectAttributes redirectAttributes) {
         if (customerId == null || customerId.trim().isEmpty() ||
             carId == null || carId.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Customer ID and Car ID are required!");
             return "redirect:/invoices/create";
-        }
-        if (invoiceId == null || invoiceId.trim().isEmpty()) {
-            invoiceId = "INV-" + new Date().getTime() + "-" + UUID.randomUUID().toString().substring(0, 4);
         }
         try {
             Car car = carList.findCar(carId);
             if (car == null || !"Available".equals(car.getStatus())) {
                 throw new IllegalStateException("Car is not available!");
             }
-            invoiceList.createInvoice(invoiceId, customerId, carId, totalAmount);
+            invoiceList.createInvoice(invoiceId, customerId, carId, totalAmount, note, pickupDate);
             redirectAttributes.addFlashAttribute("message", "Invoice created successfully!");
             return "redirect:/invoices";
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -96,10 +96,12 @@ public class InvoiceController {
     // Xử lý sửa hóa đơn
     @PostMapping("/edit")
     public String editInvoice(@RequestParam String invoiceId,
-                             @RequestParam String customerId,
-                             @RequestParam String carId,
-                             @RequestParam double totalAmount,
-                             RedirectAttributes redirectAttributes) {
+                         @RequestParam String customerId,
+                         @RequestParam String carId,
+                         @RequestParam double totalAmount,
+                         @RequestParam(required = false) String note,
+                         @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date pickupDate,
+                         RedirectAttributes redirectAttributes) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Invoice ID cannot be null or empty!");
             return "redirect:/invoices";
@@ -115,7 +117,16 @@ public class InvoiceController {
             return "redirect:/invoices/edit/" + invoiceId;
         }
         try {
-            invoiceList.updateInvoice(invoiceId, customer, car, totalAmount);
+            Invoice invoice = invoiceList.findInvoice(invoiceId);
+            if (invoice == null) {
+                throw new IllegalArgumentException("Invoice not found!");
+            }
+            invoice.setCustomer(customer);
+            invoice.setCar(car);
+            invoice.setTotalAmount(totalAmount);
+            invoice.setNote(note);
+            invoice.setPickupDate(pickupDate);
+            invoiceList.updateInvoice(invoiceId, invoice.getCustomer(), invoice.getCar(), invoice.getTotalAmount());
             redirectAttributes.addFlashAttribute("message", "Invoice updated successfully!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -135,7 +146,7 @@ public class InvoiceController {
             if (invoice == null) {
                 throw new IllegalArgumentException("Invoice not found!");
             }
-            if (invoice.getPaymentStatus() != PaymentStatus.DRAFT && invoice.getPaymentStatus() != PaymentStatus.PENDING) {
+            if (invoice.getPaymentStatus() == PaymentStatus.PAID || invoice.getPaymentStatus() == PaymentStatus.INSTALLMENT) {
                 throw new IllegalStateException("Cannot delete paid or installment invoice!");
             }
             invoiceList.deleteInvoice(invoiceId);
@@ -183,23 +194,31 @@ public class InvoiceController {
 
     // Tìm kiếm hóa đơn
     @GetMapping("/search")
-    public String searchInvoices(@RequestParam(required = false) String invoiceId,
-                            @RequestParam(required = false) String customerName,
-                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
-                            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
-                            @RequestParam(required = false) PaymentStatus paymentStatus,
-                            @RequestParam(defaultValue = "0") int page,
-                            @RequestParam(defaultValue = "10") int size,
-                            Model model) {
-        Page<Invoice> invoicePage = invoiceList.searchInvoices(invoiceId, customerName, startDate, endDate, paymentStatus, PageRequest.of(page, size));
+    public String searchInvoices(
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Model model
+    ) {
+        Page<Invoice> invoicePage = invoiceList.getInvoicesByPickupDateRange(startDate, endDate, PageRequest.of(page, size));
         model.addAttribute("invoices", invoicePage.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", invoicePage.getTotalPages());
-        model.addAttribute("invoiceId", invoiceId);
-        model.addAttribute("customerName", customerName);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
-        model.addAttribute("paymentStatus", paymentStatus);
         return "invoice/invoice-list";
+    }
+
+    // In hóa đơn
+    @GetMapping("/print/{invoiceId}")
+    public String printInvoice(@PathVariable String invoiceId, Model model, RedirectAttributes redirectAttributes) {
+        Invoice invoice = invoiceList.findInvoice(invoiceId);
+        if (invoice == null) {
+            redirectAttributes.addFlashAttribute("error", "Invoice not found!");
+            return "redirect:/invoices";
+        }
+        model.addAttribute("invoice", invoice);
+        return "invoice/print-invoice";
     }
 }

@@ -1,90 +1,356 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Invoice List</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #2e59d9;
+            --success-color: #1cc88a;
+            --info-color: #36b9cc;
+            --warning-color: #f6c23e;
+            --danger-color: #e74a3b;
+            --light-color: #f8f9fc;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        .container {
+            max-width: 1600px;
+            padding-top: 2rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e3e6f0;
+        }
+        
+        .page-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.75rem;
+        }
+        
+        .filter-card {
+            background: white;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .filter-title {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            overflow: hidden;
+        }
+        
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+        
+        .table tbody td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(78, 115, 223, 0.05);
+        }
+        
+        .status-badge {
+            padding: 0.35rem 0.65rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-paid {
+            background-color: rgba(28, 200, 138, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-pending {
+            background-color: rgba(246, 194, 62, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .status-overdue {
+            background-color: rgba(231, 74, 59, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .status-cancelled {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .action-btns .btn {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.875rem;
+            margin-right: 0.3rem;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .pagination .page-link {
+            color: var(--primary-color);
+        }
+        
+        .alert-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 350px;
+            animation: slideIn 0.5s forwards;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .empty-state {
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            color: #dddfeb;
+            margin-bottom: 1rem;
+        }
+        
+        .total-amount {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 992px) {
+            .filter-group {
+                margin-bottom: 1rem;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .add-btn {
+                margin-top: 1rem;
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-4">
-    <h1>Invoice List</h1>
-    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
-    <a th:href="@{/invoices/create}" class="btn btn-primary mb-3">Create Invoice</a>
-    <form th:action="@{/invoices/search}" method="get" class="row g-2 mb-3">
-        <div class="col"><input type="text" name="invoiceId" class="form-control" placeholder="Invoice ID" th:value="${invoiceId}"></div>
-        <div class="col"><input type="text" name="customerName" class="form-control" placeholder="Customer Name" th:value="${customerName}"></div>
-        <div class="col"><input type="date" name="startDate" class="form-control" th:value="${startDate}"></div>
-        <div class="col"><input type="date" name="endDate" class="form-control" th:value="${endDate}"></div>
-        <div class="col">
-            <select name="paymentStatus" class="form-control">
-                <option value="">All Status</option>
-                <option th:each="status : ${T(com.example.servingwebcontent.model.PaymentStatus).values()}"
-                        th:value="${status}" th:text="${status}" th:selected="${status == paymentStatus}"></option>
-            </select>
+    <div class="container">
+        <!-- Thông báo -->
+        <div class="alert-notification">
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert" th:text="${error}">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert" th:text="${message}">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
         </div>
-        <div class="col"><button type="submit" class="btn btn-secondary">Search</button></div>
-    </form>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead>
-            <tr>
-                <th>Invoice ID</th>
-                <th>Customer</th>
-                <th>Car</th>
-                <th>Date</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="i : ${invoices}">
-                <td th:text="${i.invoiceId}"></td>
-                <td th:text="${i.customer.name}"></td>
-                <td th:text="${i.car.model}"></td>
-                <td th:text="${#dates.format(i.date, 'dd/MM/yyyy')}"></td>
-                <td th:text="${#numbers.formatDecimal(i.totalAmount, 0, 'COMMA', 2, 'POINT')} + ' VND'"></td>
-                <td th:text="${i.paymentStatus}"></td>
-                <td>
-                    <a th:href="@{/invoices/edit/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-warning">Edit</a>
-                    <a th:href="@{/invoices/delete/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
-                    <a th:href="@{/invoices/detail/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-info">Detail</a>
-                </td>
-            </tr>
-            <tr th:if="${invoices == null or #lists.isEmpty(invoices)}">
-                <td colspan="7" class="text-center text-muted">No invoices found.</td>
-            </tr>
-            </tbody>
-        </table>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="bi bi-receipt me-2"></i>Invoice Management
+            </h1>
+            <a th:href="@{/invoices/create}" class="btn btn-primary add-btn">
+                <i class="bi bi-plus-circle me-1"></i>Create Invoice
+            </a>
+        </div>
+
+        <!-- Bộ lọc tìm kiếm -->
+        <div class="filter-card">
+            <h5 class="filter-title"><i class="bi bi-funnel me-2"></i>Invoice Filters</h5>
+            <form th:action="@{/invoices/search}" method="get" class="row g-3">
+                <div class="col-md-2 filter-group">
+                    <label class="form-label">Invoice ID</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                        <input type="text" name="invoiceId" class="form-control" placeholder="ID" th:value="${invoiceId}">
+                    </div>
+                </div>
+                
+                <div class="col-md-3 filter-group">
+                    <label class="form-label">Customer Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="customerName" class="form-control" placeholder="Customer name" th:value="${customerName}">
+                    </div>
+                </div>
+                
+                <div class="col-md-2 filter-group">
+                    <label class="form-label">Start Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                        <input type="date" name="startDate" class="form-control" th:value="${startDate}">
+                    </div>
+                </div>
+                
+                <div class="col-md-2 filter-group">
+                    <label class="form-label">End Date</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-calendar"></i></span>
+                        <input type="date" name="endDate" class="form-control" th:value="${endDate}">
+                    </div>
+                </div>
+                
+                <div class="col-md-2 filter-group">
+                    <label class="form-label">Payment Status</label>
+                    <select name="paymentStatus" class="form-select">
+                        <option value="">All Status</option>
+                        <option th:each="status : ${T(com.example.servingwebcontent.model.PaymentStatus).values()}"
+                                th:value="${status}" th:text="${status}" th:selected="${status == paymentStatus}"></option>
+                    </select>
+                </div>
+                
+                <div class="col-md-1 filter-group d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bảng danh sách -->
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Invoice ID</th>
+                            <th>Customer</th>
+                            <th>Car</th>
+                            <th>Date</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="i : ${invoices}">
+                            <td th:text="${i.invoiceId}"></td>
+                            <td>
+                                <strong th:text="${i.customer != null ? i.customer.name : 'N/A'}"></strong>
+                            </td>
+                            <td th:text="${i.car != null ? i.car.brand + ' ' + i.car.model : 'N/A'}"></td>
+                            <td th:text="${#dates.format(i.pickupDate, 'dd/MM/yyyy')}"></td>
+                            <td class="total-amount" th:text="${'$' + #numbers.formatDecimal(i.totalAmount, 0, 'COMMA', 2, 'POINT')}"></td>
+                            <td>
+                                <span th:classappend="${i.paymentStatus == 'PAID'} ? 'status-paid' : (${i.paymentStatus == 'PENDING'} ? 'status-pending' : (${i.paymentStatus == 'OVERDUE'} ? 'status-overdue' : 'status-cancelled'))"
+                                      class="status-badge" th:text="${i.paymentStatus}">
+                                </span>
+                            </td>
+                            <td class="text-end action-btns">
+                                <a th:href="@{/invoices/detail/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-outline-primary" title="View Details">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+                                <a th:href="@{/invoices/edit/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                <a th:href="@{/invoices/delete/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-outline-danger" title="Delete" 
+                                   onclick="return confirm('Are you sure you want to delete this invoice?')">
+                                    <i class="bi bi-trash-fill"></i>
+                                </a>
+                                <a th:href="@{/invoices/print/{id}(id=${i.invoiceId})}" class="btn btn-sm btn-outline-secondary" title="Print">
+                                    <i class="bi bi-printer-fill"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${invoices == null or #lists.isEmpty(invoices)}">
+                            <td colspan="7" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="bi bi-receipt empty-state-icon"></i>
+                                    <h5 class="text-muted">No invoices found</h5>
+                                    <p class="text-muted mb-4">Try adjusting your search filters or create a new invoice</p>
+                                    <a th:href="@{/invoices/create}" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle me-1"></i>Create Invoice
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Phân trang -->
+        <nav aria-label="Page navigation" class="mt-4" th:if="${totalPages > 1}">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/invoices(page=0, size=${size}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                    <a class="page-link" th:href="@{/invoices(page=${currentPage - 1}, size=${size}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                
+                <li class="page-item" th:each="p : ${#numbers.sequence(1, totalPages)}" 
+                    th:classappend="${currentPage == p - 1} ? 'active'">
+                    <a class="page-link" th:text="${p}" 
+                       th:href="@{/invoices(page=${p - 1}, size=${size}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}"></a>
+                </li>
+                
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/invoices(page=${currentPage + 1}, size=${size}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                    <a class="page-link" th:href="@{/invoices(page=${totalPages - 1}, size=${size}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     </div>
-    <!-- Pagination -->
-    <nav th:if="${totalPages > 1}">
-        <ul class="pagination justify-content-center">
-            <li class="page-item" th:classappend="${currentPage == 0} ? ' disabled'">
-                <a class="page-link"
-                   th:href="@{/invoices(page=0, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">First</a>
-            </li>
-            <li class="page-item" th:classappend="${currentPage == 0} ? ' disabled'">
-                <a class="page-link"
-                   th:href="@{/invoices(page=${currentPage - 1}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">Previous</a>
-            </li>
-            <li class="page-item" th:each="p : ${#numbers.sequence(0, totalPages - 1)}"
-                th:classappend="${currentPage == p} ? ' active'">
-                <a class="page-link"
-                   th:text="${p + 1}"
-                   th:href="@{/invoices(page=${p}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}"></a>
-            </li>
-            <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? ' disabled'">
-                <a class="page-link"
-                   th:href="@{/invoices(page=${currentPage + 1}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">Next</a>
-            </li>
-            <li class="page-item" th:classappend="${currentPage + 1 == totalPages} ? ' disabled'">
-                <a class="page-link"
-                   th:href="@{/invoices(page=${totalPages - 1}, invoiceId=${invoiceId}, customerName=${customerName}, startDate=${startDate}, endDate=${endDate}, paymentStatus=${paymentStatus})}">Last</a>
-            </li>
-        </ul>
-    </nav>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Tự động đóng thông báo sau 5 giây
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                new bootstrap.Alert(alert).close();
+            });
+        }, 5000);
+    </script>
 </body>
 </html>

@@ -42,7 +42,7 @@ public class ServingWebContentApplicationTest {
 	@Test
 	public void greeting() throws Exception {
 		mockMvc.perform(get("/greeting"))
-				.andExpect(content().string(containsString("Hello, World!")));
+				.andExpect(content().string(containsString("<h1>Hello, World</h1>")));
 	}
 
 	@Test

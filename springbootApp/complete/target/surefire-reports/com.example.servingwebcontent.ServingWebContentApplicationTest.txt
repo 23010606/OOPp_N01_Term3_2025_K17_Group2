@@ -1,0 +1,45 @@
+-------------------------------------------------------------------------------
+Test set: com.example.servingwebcontent.ServingWebContentApplicationTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 4.193 s <<< FAILURE! -- in com.example.servingwebcontent.ServingWebContentApplicationTest
+com.example.servingwebcontent.ServingWebContentApplicationTest.homePage -- Time elapsed: 0.969 s <<< FAILURE!
+java.lang.AssertionError: 
+Response content
+Expected: a string containing "Car Store Management"
+     but: was ""
+	at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
+	at org.springframework.test.web.servlet.result.ContentResultMatchers.lambda$string$3(ContentResultMatchers.java:141)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.example.servingwebcontent.ServingWebContentApplicationTest.homePage(ServingWebContentApplicationTest.java:39)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+com.example.servingwebcontent.ServingWebContentApplicationTest.greeting -- Time elapsed: 0.020 s <<< FAILURE!
+java.lang.AssertionError: 
+Response content
+Expected: a string containing "<h1>Hello, World</h1>"
+     but: was "<!DOCTYPE html>
+<html>
+<head>
+    <title>Greeting</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const name = /*World*/ 'Greg' || 'World';
+            document.querySelector('h1').textContent = 'Hello, ' + name + '!';
+        });
+    </script>
+</body>
+</html>
+"
+	at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
+	at org.springframework.test.web.servlet.result.ContentResultMatchers.lambda$string$3(ContentResultMatchers.java:141)
+	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:214)
+	at com.example.servingwebcontent.ServingWebContentApplicationTest.greeting(ServingWebContentApplicationTest.java:45)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

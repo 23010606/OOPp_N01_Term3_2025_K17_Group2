@@ -1,37 +1,18 @@
-package com.example.servingwebcontent.model;
+package model;
 
-import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@Entity
-@Table(name = "invoices")
 public class Invoice {
-    @Id
     private String invoiceId;
-
-    @ManyToOne
-    @JoinColumn(name = "car_id")
     private Car car;
-
-    @ManyToOne
-    @JoinColumn(name = "customer_id")
     private Customer customer;
-
     private Date date;
     private double totalAmount;
-
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus; // Sử dụng enum riêng
-
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "invoice_id")
+    private PaymentStatus paymentStatus;
     private List<Payment> paymentHistory = new ArrayList<>();
-
     private String note;
-
-    @Temporal(TemporalType.DATE)
     private Date pickupDate;
 
     public Invoice() {}
@@ -80,7 +61,7 @@ public class Invoice {
     public Date getPickupDate() { return pickupDate; }
     public void setPickupDate(Date pickupDate) { this.pickupDate = pickupDate; }
 
-    // Phương thức nghiệp vụ
+    // Business methods
     public boolean isValid() {
         return customer != null && car != null && totalAmount > 0 && date != null;
     }

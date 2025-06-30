@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; background: #fff; }
+        .invoice-container { max-width: 700px; margin: 0 auto; padding: 30px; border: 1px solid #e0e0e0; }
+        .invoice-title { font-size: 28px; font-weight: bold; color: #4e73df; text-align: center; margin-bottom: 30px; }
+        .invoice-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .info-box { flex: 1; padding: 15px; background: #f8f9fc; border-radius: 5px; margin: 0 10px; }
+        .info-box:first-child { margin-left: 0; }
+        .info-box:last-child { margin-right: 0; }
+        .info-box h3 { margin-top: 0; color: #4e73df; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+        .info-row { display: flex; margin-bottom: 8px; }
+        .info-label { font-weight: bold; min-width: 120px; color: #555; }
+        .info-value { flex: 1; }
+        .car-details { width: 100%; border-collapse: collapse; margin: 25px 0; }
+        .car-details th { background: #4e73df; color: white; padding: 12px; text-align: left; }
+        .car-details td { padding: 12px; border-bottom: 1px solid #ddd; }
+        .car-details tr:last-child td { border-bottom: none; }
+        .highlight { background: #f8f9fc; font-weight: bold; }
+        .thankyou-section { margin-top: 40px; padding: 20px; background: #f8f9fc; border-radius: 5px; text-align: center; }
+        .thankyou-message { font-size: 16px; color: #4e73df; margin-bottom: 10px; font-weight: 500; }
+        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #888; padding-top: 20px; border-top: 1px solid #eee; }
+        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .total-amount { font-size: 18px; font-weight: bold; color: #4e73df; }
+        @media print {
+            body { padding: 0; }
+            .invoice-container { border: none; box-shadow: none; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="invoice-title">
+            HÓA ĐƠN THANH TOÁN
+        </div>
+
+        <!-- Invoice Info -->
+        <div class="invoice-info">
+            <div class="info-box">
+                <h3>Thông tin khách hàng</h3>
+                <div class="info-row">
+                    <div class="info-label">Tên khách hàng:</div>
+                    <div class="info-value" th:text="${invoice.customer.name}"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Số điện thoại:</div>
+                    <div class="info-value" th:text="${invoice.customer.phoneNumber}"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Email:</div>
+                    <div class="info-value" th:text="${invoice.customer.email ?: 'N/A'}"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Địa chỉ:</div>
+                    <div class="info-value" th:text="${invoice.customer.address ?: 'N/A'}"></div>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Thông tin hóa đơn</h3>
+                <div class="info-row">
+                    <div class="info-label">Mã hóa đơn:</div>
+                    <div class="info-value" th:text="${invoice.invoiceId}"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Ngày mua:</div>
+                    <div class="info-value" th:text="${#dates.format(invoice.pickupDate, 'dd/MM/yyyy')}"></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Trạng thái:</div>
+                    <div class="info-value">
+                        <span th:classappend="${invoice.paymentStatus == 'PAID'} ? 'status-paid' : 'status-pending'" 
+                              class="status-badge" th:text="${invoice.paymentStatus}"></span>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Ghi chú:</div>
+                    <div class="info-value" th:text="${invoice.note ?: 'Không có ghi chú'}"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Car Details -->
+        <table class="car-details">
+            <thead>
+                <tr>
+                    <th>Thông tin xe</th>
+                    <th>Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hãng xe</td>
+                    <td th:text="${invoice.car.brand}"></td>
+                </tr>
+                <tr>
+                    <td>Model</td>
+                    <td th:text="${invoice.car.model}"></td>
+                </tr>
+                <tr>
+                    <td>Năm sản xuất</td>
+                    <td th:text="${invoice.car.year}"></td>
+                </tr>
+                <tr class="highlight">
+                    <td>Giá xe</td>
+                    <td class="total-amount" th:text="${#numbers.formatDecimal(invoice.car.price, 0, 'COMMA', 2, 'POINT') + ' VND'}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Total Amount -->
+        <div style="text-align: right; margin-top: 20px;">
+            <div style="font-size: 16px; margin-bottom: 5px;">Tổng cộng:</div>
+            <div class="total-amount" style="font-size: 24px;" th:text="${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT') + ' VND'}"></div>
+        </div>
+
+        <!-- Thank you section -->
+        <div class="thankyou-section">
+            <div class="thankyou-message">
+                Cảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!
+            </div>
+            <div style="color: #666; font-size: 14px;">
+                Hóa đơn này có giá trị thanh toán và không cần chữ ký<br>
+                Mọi thắc mắc vui lòng liên hệ hotline hoặc email hỗ trợ
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div>Hóa đơn điện tử - Ngày tạo: <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy HH:mm')}"></span></div>
+            <div class="no-print" style="margin-top: 15px;">
+                <button onclick="window.print()" style="padding: 8px 20px; background-color: #4e73df; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    In hóa đơn
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

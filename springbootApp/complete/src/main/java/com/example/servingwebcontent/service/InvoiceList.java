@@ -8,6 +8,7 @@ import com.example.servingwebcontent.repository.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -23,7 +24,7 @@ public class InvoiceList {
     @Autowired
     private CustomerList customerList;
 
-    public void createInvoice(String invoiceId, String customerId, String carId, double totalAmount) {
+    public void createInvoice(String invoiceId, String customerId, String carId, double totalAmount, String note, Date pickupDate) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
             invoiceId = "INV-" + new Date().getTime() + "-" + UUID.randomUUID().toString().substring(0, 4);
         }
@@ -31,25 +32,23 @@ public class InvoiceList {
             throw new IllegalArgumentException("Invoice ID " + invoiceId + " already exists!");
         }
         Customer customer = customerList.findCustomer(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("Customer with ID " + customerId + " not found!");
-        }
+        if (customer == null) throw new IllegalArgumentException("Customer not found!");
         Car car = carList.findCar(carId);
-        if (car == null) {
-            throw new IllegalArgumentException("Car with ID " + carId + " not found!");
-        }
-        if (!"Available".equals(car.getStatus())) {
-            throw new IllegalStateException("Car with ID " + carId + " is not available!");
-        }
-        if (totalAmount <= 0) {
-            throw new IllegalArgumentException("Total amount must be positive!");
-        }
+        if (car == null) throw new IllegalArgumentException("Car not found!");
+        if (!"Available".equals(car.getStatus())) throw new IllegalStateException("Car not available!");
+        if (totalAmount <= 0) throw new IllegalArgumentException("Total amount must be positive!");
+
         Invoice invoice = new Invoice(invoiceId, customer, car, totalAmount);
+        invoice.setDate(new Date());
+        invoice.setPaymentStatus(PaymentStatus.PENDING);
+        invoice.setNote(note);
+        invoice.setPickupDate(pickupDate);
+
+        // Chỉ lưu Invoice, không cần update lại customer
         invoiceRepository.save(invoice);
-        customer.addPurchase(invoice);
+
+        // Cập nhật trạng thái xe và lưu lại car nếu cần
         car.setStatus("Sold");
-        customerList.updateCustomer(customer.getId(), customer.getName(), customer.getEmail(), customer.getPhoneNumber(),
-                customer.getAddress(), customer.getRegistrationDate());
         carList.updateCar(car.getCarId(), car.getBrand(), car.getModel(), car.getYear(), car.getPrice(),
                 car.getStatus(), car.getImportDate(), car.getQuantity());
     }
@@ -67,7 +66,7 @@ public class InvoiceList {
             throw new IllegalArgumentException("Invoice with ID " + invoiceId + " not found!");
         }
         Invoice invoice = invoiceOpt.get();
-        if (invoice.getPaymentStatus() != PaymentStatus.DRAFT && invoice.getPaymentStatus() != PaymentStatus.PENDING) {
+        if (invoice.getPaymentStatus() == PaymentStatus.PAID || invoice.getPaymentStatus() == PaymentStatus.INSTALLMENT) {
             throw new IllegalStateException("Cannot delete paid or installment invoice!");
         }
         Customer customer = invoice.getCustomer();
@@ -133,14 +132,8 @@ public class InvoiceList {
         invoiceRepository.save(invoice);
     }
 
-    public Page<Invoice> getInvoicesByDateRange(Date startDate, Date endDate, PageRequest pageRequest) {
-        if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException("Start date and end date cannot be null!");
-        }
-        if (startDate.after(endDate)) {
-            throw new IllegalArgumentException("Start date cannot be after end date!");
-        }
-        return invoiceRepository.findByDateBetween(startDate, endDate, pageRequest);
+    public Page<Invoice> getInvoicesByPickupDateRange(Date startDate, Date endDate, Pageable pageable) {
+        return invoiceRepository.findByPickupDateBetween(startDate, endDate, pageable);
     }
 
     public Page<Invoice> searchInvoices(String invoiceId, String customerName, Date startDate, Date endDate, PaymentStatus paymentStatus, PageRequest pageRequest) {

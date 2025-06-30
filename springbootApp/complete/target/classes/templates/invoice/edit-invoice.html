@@ -14,14 +14,41 @@
                 <option value="">Select Customer</option>
                 <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}" th:selected="${c.id == invoice.customer.id}"></option>
             </select></div>
-            <div class="mb-3"><label>Car</label><select name="carId" class="form-control" required>
-                <option value="">Select Car</option>
-                <option th:each="c : ${cars}" th:value="${c.carId}" th:text="${c.model}" th:selected="${c.carId == invoice.car.carId}"></option>
-            </select></div>
-            <div class="mb-3"><label>Total Amount</label><input type="number" name="totalAmount" class="form-control" th:value="${invoice.totalAmount}" step="0.01" required></div>
+            <div class="mb-3"><label>Car</label>
+    <select name="carId" id="carSelect" class="form-control" required>
+        <option value="">Select Car</option>
+        <option th:each="c : ${cars}" 
+                th:value="${c.carId}" 
+                th:text="${c.model + ' - ' + #numbers.formatDecimal(c.price, 0, 'COMMA', 2, 'POINT') + ' VND'}"
+                th:attr="data-price=${c.price}"
+                th:selected="${c.carId == invoice.car.carId}">
+        </option>
+    </select>
+</div>
+<div class="mb-3"><label>Total Amount</label>
+    <input type="number" name="totalAmount" id="totalAmount" class="form-control" th:value="${invoice.totalAmount}" step="0.01" readonly required>
+</div>
+<div class="mb-3">
+    <label>Note</label>
+    <input type="text" name="note" class="form-control" th:value="${invoice.note}" placeholder="Ghi chú (nếu có)">
+</div>
+<div class="mb-3">
+    <label>Pickup Date</label>
+    <input type="date" name="pickupDate" class="form-control" th:value="${#dates.format(invoice.pickupDate, 'yyyy-MM-dd')}">
+</div>
             <button type="submit" class="btn btn-primary">Update Invoice</button>
             <a href="/invoices" class="btn btn-secondary ms-2">Cancel</a>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const carSelect = document.getElementById('carSelect');
+        const totalAmount = document.getElementById('totalAmount');
+        carSelect.addEventListener('change', function() {
+            const selected = carSelect.options[carSelect.selectedIndex];
+            totalAmount.value = selected.getAttribute('data-price') || '';
+        });
+    });
+</script>
 </html>

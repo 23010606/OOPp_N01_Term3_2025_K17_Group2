@@ -1,4 +1,3 @@
-com/example/servingwebcontent/model/ObjectGeneral.class
 com/example/servingwebcontent/GreetingController.class
 com/example/servingwebcontent/service/CustomerList.class
 com/example/servingwebcontent/repository/CustomerRepository.class
