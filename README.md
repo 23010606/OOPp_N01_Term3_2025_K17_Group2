@@ -1,5 +1,5 @@
 
-# Bài tap ve nha _ NHOM2
+# Bài tap ve nha _ NHOM10
 
 ## Câu 1 . Tiêu đề 
 **Quản lý cửa hàng xe**
@@ -30,21 +30,21 @@
 
 # Bài tap UML
 - Thành viên :
-1. Nguyễn Thị Huyền Trang
-ID : 23010181
-chữ ký : Trang
+1. Nguyễn Đỗ Phi Hùng
+ID : 23010606
+chữ ký : Hùng
 
-2. Đặng Đắc Tú
-ID : 23010619
-chữ kí : Tú
+2. Bùi Thanh Tuân
+ID : 23010569
+chữ kí : Tuân
 
-3. Lưu Quang Dũng
-ID : 23010665
-chữ kí : Dũng
+3. Trần Trọng Minh
+ID : 23010563
+chữ kí : Minh
 
 
 
-Project_nhóm-02:
+Project_nhóm-10:
 Xây dựng ứng dụng quản lý cửa hàng xe.
 
 Yêu cầu chính:
@@ -104,9 +104,9 @@ Phân tích thuật toán thành các chức năng nhỏ :
 
 
  phân công : 
- - Trang :  Kiểm tra xe có sẵn để bán: Kiểm tra xem xe (dựa trên ID xe) có trạng thái "conhang" và số lượng đủ để giao hay không.
- - Tú :  Tạo đơn hàng mới: Tạo một đơn hàng với thông tin khách hàng, xe, ngày đặt cọc, và số tiền đặt cọc.
- - Dũng :  Giao xe và cập nhật trạng thái đơn hàng: Khi giao xe thành công, cập nhật trạng thái đơn hàng thành "completed", giảm số lượng xe trong kho, và ghi nhận thời gian giao xe.
+ - Hùng :  Kiểm tra xe có sẵn để bán: Kiểm tra xem xe (dựa trên ID xe) có trạng thái "conhang" và số lượng đủ để giao hay không.
+ - Tuân :  Tạo đơn hàng mới: Tạo một đơn hàng với thông tin khách hàng, xe, ngày đặt cọc, và số tiền đặt cọc.
+ - Minh :  Giao xe và cập nhật trạng thái đơn hàng: Khi giao xe thành công, cập nhật trạng thái đơn hàng thành "completed", giảm số lượng xe trong kho, và ghi nhận thời gian giao xe.
 
 
 
